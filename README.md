@@ -1,6 +1,11 @@
 ATTENTION
 =========
 
+This repository is the fork of the main projectchrono repository which caters towards implementation of skid steer architecture in the vehicle module.
+
+Vehicle Module:
+all driver control inputs (steering, throttle, braking) to various vehicle subsystems.
+
 The structure of the Chrono git repository was changed as follows:
 
 - The main development branch is now called `main` (previously `develop`)
