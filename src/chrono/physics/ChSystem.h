@@ -98,6 +98,25 @@ class ChApi ChSystem : public ChIntegrableIIorder {
     /// Gets the current time step used for the integration (dynamical simulation).
     double GetStep() const { return step; }
 
+    /// Sets the lower limit for time step (only needed if using
+    /// integration methods which support time step adaption).
+    void SetStepMin(double m_step_min) {
+        if (m_step_min > 0.)
+            step_min = m_step_min;
+    }
+    /// Gets the lower limit for time step
+    double GetStepMin() const { return step_min; }
+
+    /// Sets the upper limit for time step (only needed if using
+    /// integration methods which support time step adaption).
+    void SetStepMax(double m_step_max) {
+        if (m_step_max > step_min)
+            step_max = m_step_max;
+    }
+
+    /// Gets the upper limit for time step
+    double GetStepMax() const { return step_max; }
+
     /// Set the method for time integration (time stepper type).
     ///   - Suggested for fast dynamics with hard (NSC) contacts: EULER_IMPLICIT_LINEARIZED
     ///   - Suggested for fast dynamics with hard (NSC) contacts and low inter-penetration: EULER_IMPLICIT_PROJECTED
@@ -853,7 +872,7 @@ class ChApi ChSystem : public ChIntegrableIIorder {
     /// Perform a generic static analysis. Low level API, where the user creates and configures a
     /// ChStaticAnalysis-inherited object by his own. For ready-to-use analysis, use 
     /// DoStaticLinear, DoStaticNonLinear, DoStaticNonlinearRheonomic etc. instead.
-    bool DoStaticAnalysis(ChStaticAnalysis& analysis);
+    bool DoStaticAnalysis(std::shared_ptr<ChStaticAnalysis> analysis);
 
     /// Solve the position of static equilibrium (and the reactions).
     /// This is a one-step only approach that solves the **linear** equilibrium.
@@ -870,7 +889,7 @@ class ChApi ChSystem : public ChIntegrableIIorder {
     /// but differently from DoStaticNonlinear, it considers rheonomic constraints (ex. ChLinkMotorRotationSpeed) 
     /// that can impose steady-state speeds&accelerations to the mechanism, ex. to generate centrifugal forces in turbine blades.
     /// This version uses a nonlinear static analysis solver with default parameters.
-    bool DoStaticNonlinearRheonomic(int nsteps = 10, bool verbose = false, std::shared_ptr<ChStaticNonLinearRheonomicAnalysis::IterationCallback> callback = nullptr);
+    bool DoStaticNonlinearRheonomic(int nsteps = 10, bool verbose = false, std::shared_ptr<ChStaticNonLinearRheonomicAnalysis::IterationCallback> mcallback = nullptr);
 
     /// Finds the position of static equilibrium (and the reactions) starting from the current position.
     /// Since a truncated iterative method is used, you may need to call this method multiple times in case of large
@@ -916,8 +935,10 @@ class ChApi ChSystem : public ChIntegrableIIorder {
     int ndoc_w_C;    ///< number of scalar constraints C, when using 3 rot. dof. per body (excluding unilaterals)
     int ndoc_w_D;    ///< number of scalar constraints D, when using 3 rot. dof. per body (only unilaterals)
 
-    double ch_time;  ///< simulation time of the system
-    double step;     ///< time step
+    double ch_time;   ///< simulation time of the system
+    double step;      ///< time step
+    double step_min;  ///< min time step
+    double step_max;  ///< max time step
 
     double tol_force;  ///< tolerance for forces (used to obtain a tolerance for impulses)
 

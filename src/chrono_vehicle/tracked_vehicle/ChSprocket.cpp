@@ -216,24 +216,20 @@ std::shared_ptr<geometry::ChTriangleMeshConnected> ChSprocket::CreateVisualizati
     // Create faces on the 4 gear planes
     for (int i = 0; i < 4; i++) {
         size_t ivstart = i * (2 * npoints);
-        for (size_t ip = 0; ip < npoints - 1; ip++) {
+        for (size_t ip = 0; ip < npoints-1; ip++) {
             int iv = static_cast<int>(ivstart + ip);
-            idx_vertices[it] = (i % 2 == 0) ? ChVector<int>(iv, iv + 1, iv + np)  //
-                                            : ChVector<int>(iv, iv + np, iv + 1);
+            idx_vertices[it] = ChVector<int>(iv, iv + 1, iv + np);
             idx_normals[it] = ChVector<int>(i, i, i);
             ++it;
-            idx_vertices[it] = (i % 2 == 0) ? ChVector<int>(iv + 1, iv + np + 1, iv + np)  //
-                                            : ChVector<int>(iv + 1, iv + np, iv + np + 1);
+            idx_vertices[it] = ChVector<int>(iv + 1, iv + np + 1, iv + np);
             idx_normals[it] = ChVector<int>(i, i, i);
             ++it;
         }
         int iv = static_cast<int>(ivstart);
-        idx_vertices[it] = (i % 2 == 0) ? ChVector<int>(iv + np - 1, iv, iv + 2 * np - 1)  //
-                                        : ChVector<int>(iv + np - 1, iv + 2 * np - 1, iv);
+        idx_vertices[it] = ChVector<int>(iv + np - 1, iv, iv + 2 * np - 1);
         idx_normals[it] = ChVector<int>(i, i, i);
         ++it;
-        idx_vertices[it] = (i % 2 == 0) ? ChVector<int>(iv, iv + np, iv + 2 * np - 1)   //
-                                        : ChVector<int>(iv, iv + 2 * np - 1, iv + np);  
+        idx_vertices[it] = ChVector<int>(iv, iv + np, iv + 2 * np - 1);
         idx_normals[it] = ChVector<int>(i, i, i);
         ++it;
     }
@@ -243,20 +239,20 @@ std::shared_ptr<geometry::ChTriangleMeshConnected> ChSprocket::CreateVisualizati
         size_t ivstart = i * (4 * npoints);
         for (size_t ip = 0; ip < npoints - 1; ip++) {
             int iv = static_cast<int>(ivstart + ip);
-            int in = 0;  //static_cast<int>(4 + ip);
-            idx_vertices[it] = ChVector<int>(iv, iv + 2 * np, iv + 1);
+            int in = static_cast<int>(4 + ip);
+            idx_vertices[it] = ChVector<int>(iv, iv + 1, iv + 2 * np);
             idx_normals[it] = ChVector<int>(in, in, in);
             ++it;
-            idx_vertices[it] = ChVector<int>(iv + 1, iv + 2 * np, iv + 2 * np + 1);
+            idx_vertices[it] = ChVector<int>(iv + 1, iv + 2 * np + 1, iv + 2 * np);
             idx_normals[it] = ChVector<int>(in, in, in);
             ++it;
         }
         int iv = static_cast<int>(ivstart);
-        int in = 0;  // static_cast<int>(4 + npoints - 1);
-        idx_vertices[it] = ChVector<int>(iv + np - 1, iv + 3 * np - 1, iv);
+        int in = static_cast<int>(4 + npoints - 1);
+        idx_vertices[it] = ChVector<int>(iv + np - 1, iv, iv + 3 * np - 1);
         idx_normals[it] = ChVector<int>(in, in, in);
         ++it;
-        idx_vertices[it] = ChVector<int>(iv, iv + 3 * np - 1, iv + 2 * np);
+        idx_vertices[it] = ChVector<int>(iv, iv + 2 * np, iv + 3 * np - 1);
         idx_normals[it] = ChVector<int>(in, in, in);
         ++it;
     }
@@ -266,7 +262,7 @@ std::shared_ptr<geometry::ChTriangleMeshConnected> ChSprocket::CreateVisualizati
         size_t ivstart = i * (4 * npoints) + npoints;
         for (size_t ip = 0; ip < npoints - 1; ip++) {
             int iv = static_cast<int>(ivstart + ip);
-            int in = 0;  // static_cast<int>(4 + npoints + ip);
+            int in = static_cast<int>(4 + npoints + ip);
             idx_vertices[it] = ChVector<int>(iv, iv + 1, iv + 2 * np);
             idx_normals[it] = ChVector<int>(in, in, in);
             ++it;
@@ -275,7 +271,7 @@ std::shared_ptr<geometry::ChTriangleMeshConnected> ChSprocket::CreateVisualizati
             ++it;
         }
         int iv = static_cast<int>(ivstart);
-        int in = 0;  // static_cast<int>(4 + 2 * npoints - 1);
+        int in = static_cast<int>(4 + 2 * npoints - 1);
         idx_vertices[it] = ChVector<int>(iv + np - 1, iv, iv + 3 * np - 1);
         idx_normals[it] = ChVector<int>(in, in, in);
         ++it;

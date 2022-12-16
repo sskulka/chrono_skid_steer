@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
     // Create the terrain
     RigidTerrain terrain(&sys);
     if (enable_gravity) {
-        ChContactMaterialData minfo;
+        MaterialInfo minfo;
         minfo.mu = 0.9f;
         minfo.cr = 0.01f;
         minfo.Y = 2e7f;
@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) {
     // Attach custom stats overlay
     auto my_stats = chrono_types::make_shared<JSONStats>();
     my_stats->json_file = setup.VehicleJSON();
-    vis.AttachStatsRenderer(my_stats);
+    vis.SetStatsRenderer(my_stats);
     vis.EnableStats(true);
 
     // Simulation loop

@@ -514,10 +514,11 @@ std::shared_ptr<ChFilter> CreateFilterJSON(const Value& value) {
         std::string name = GetStringMemberWithDefault(value, "Name");
         filter = chrono_types::make_shared<ChFilterCameraNoiseConstNormal>(mean, stdev, name);
     } else if (type.compare("ChFilterCameraNoisePixDep") == 0) {
-        float variance_slope = value["Variance Slope"].GetFloat();
-        float variance_intercept = value["Variance Intercept"].GetFloat();
+        float gain = value["Gain"].GetFloat();
+        float sigma_read = value["Sigma Read"].GetFloat();
+        float sigma_adc = value["Sigma ADC"].GetFloat();
         std::string name = GetStringMemberWithDefault(value, "Name");
-        filter = chrono_types::make_shared<ChFilterCameraNoisePixDep>(variance_slope, variance_intercept, name);
+        filter = chrono_types::make_shared<ChFilterCameraNoisePixDep>(gain, sigma_read, sigma_adc, name);
     } else if (type.compare("ChFilterLidarNoiseXYZI") == 0) {
         float stdev_range = value["Standard Deviation Range"].GetFloat();
         float stdev_v_angle = value["Standard Deviation Vertical Angle"].GetFloat();

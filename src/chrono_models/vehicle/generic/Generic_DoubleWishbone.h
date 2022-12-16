@@ -49,9 +49,6 @@ class CH_MODELS_API Generic_DoubleWishbone : public ChDoubleWishbone {
 
     virtual const ChVector<> getLocation(PointId which) override;
 
-    virtual double getCamberAngle() const override { return 0; }
-    virtual double getToeAngle() const override { return 0; }
-
     virtual double getSpindleMass() const override { return m_spindleMass; }
     virtual double getUCAMass() const override { return m_UCAMass; }
     virtual double getLCAMass() const override { return m_LCAMass; }
@@ -120,9 +117,6 @@ class CH_MODELS_API Generic_DoubleWishboneFront : public ChDoubleWishbone {
 
     virtual const ChVector<> getLocation(PointId which) override;
 
-    virtual double getCamberAngle() const override { return 0; }
-    virtual double getToeAngle() const override { return 0; }
-
     virtual double getSpindleMass() const override { return m_spindleMass; }
     virtual double getUCAMass() const override { return m_UCAMass; }
     virtual double getLCAMass() const override { return m_LCAMass; }
@@ -189,9 +183,6 @@ class CH_MODELS_API Generic_DoubleWishboneRear : public ChDoubleWishbone {
     // Implementation of virtual methods imposed by the base class ChDoubleWishbone
 
     virtual const ChVector<> getLocation(PointId which) override;
-
-    virtual double getCamberAngle() const override { return 0; }
-    virtual double getToeAngle() const override { return 0; }
 
     virtual double getSpindleMass() const override { return m_spindleMass; }
     virtual double getUCAMass() const override { return m_UCAMass; }

@@ -37,6 +37,10 @@ set(CVM_HMMWV_FILES
     hmmwv/HMMWV_RigidTire.h
     hmmwv/HMMWV_FialaTire.cpp
     hmmwv/HMMWV_FialaTire.h
+    hmmwv/HMMWV_LugreTire.cpp
+    hmmwv/HMMWV_LugreTire.h
+    hmmwv/HMMWV_PacejkaTire.cpp
+    hmmwv/HMMWV_PacejkaTire.h
     hmmwv/HMMWV_Pac89Tire.cpp
     hmmwv/HMMWV_Pac89Tire.h
     hmmwv/HMMWV_Pac02Tire.cpp

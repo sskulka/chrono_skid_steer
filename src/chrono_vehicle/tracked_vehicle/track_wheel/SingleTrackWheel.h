@@ -57,7 +57,7 @@ class CH_VEHICLE_API SingleTrackWheel : public ChSingleTrackWheel {
     bool m_has_mesh;
     std::string m_meshFile;
 
-    ChContactMaterialData m_mat_info;
+    MaterialInfo m_mat_info;
 };
 
 /// @} vehicle_tracked_suspension

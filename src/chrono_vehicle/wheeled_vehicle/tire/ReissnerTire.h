@@ -109,7 +109,7 @@ class CH_VEHICLE_API ReissnerTire : public ChReissnerTire {
     std::vector<std::vector<double>> m_lugs_ha;
     std::vector<std::vector<double>> m_lugs_hb;
 
-    ChContactMaterialData m_mat_info;
+    MaterialInfo m_mat_info;
 };
 
 /// @} vehicle_wheeled_tire

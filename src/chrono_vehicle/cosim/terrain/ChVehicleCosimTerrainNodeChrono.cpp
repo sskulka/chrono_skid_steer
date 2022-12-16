@@ -155,8 +155,8 @@ void ChVehicleCosimTerrainNodeChrono::AddRigidObstacle(const RigidObstacle& obst
 // - complete system construction
 // - create the appropriate proxy bodies (state not set yet)
 // -----------------------------------------------------------------------------
-void ChVehicleCosimTerrainNodeChrono::OnInitialize(unsigned int num_objects) {
-    m_proxies.resize(num_objects);
+void ChVehicleCosimTerrainNodeChrono::OnInitialize(unsigned int num_tires) {
+    m_proxies.resize(num_tires);
 
     // Construct the terrain
     Construct();
@@ -165,13 +165,13 @@ void ChVehicleCosimTerrainNodeChrono::OnInitialize(unsigned int num_objects) {
     GetSystem()->SetChTime(0);
 
     // Create proxy bodies
-    for (unsigned int i = 0; i < num_objects; i++) {
+    for (unsigned int i = 0; i < num_tires; i++) {
         switch (m_interface_type) {
             case InterfaceType::BODY:
-                CreateRigidProxy(i);
+                CreateWheelProxy(i);
                 break;
             case InterfaceType::MESH:
-                CreateMeshProxy(i);
+                CreateMeshProxies(i);
                 break;
         }
     }

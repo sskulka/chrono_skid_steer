@@ -19,10 +19,11 @@
 
 #include "chrono/core/ChLog.h"
 
-#include "chrono/utils/ChSocket.h"
+#include "chrono_cosimulation/ChSocketFramework.h"
+#include "chrono_cosimulation/ChExceptionSocket.h"
 
 using namespace chrono;
-using namespace chrono::utils;
+using namespace chrono::cosimul;
 
 int main(int argc, char* argv[]) {
     // To write something to the console, use the chrono::GetLog()
@@ -36,7 +37,7 @@ int main(int argc, char* argv[]) {
         // Test 1
         // Get the name and IP of local host, and display infos
 
-        ChSocketHostInfo local_host;
+        ChHostInfo local_host;
 
         GetLog() << " Local host information: \n";
         GetLog() << "      Name:    " << local_host.getHostName() << "\n";

@@ -95,16 +95,18 @@ void ChSteeringController::WriteOutputFile(const std::string& filename) {
 // -----------------------------------------------------------------------------
 // Implementation of the derived class ChPathSteeringController.
 // -----------------------------------------------------------------------------
-ChPathSteeringController::ChPathSteeringController(std::shared_ptr<ChBezierCurve> path)
+ChPathSteeringController::ChPathSteeringController(std::shared_ptr<ChBezierCurve> path, bool isClosedPath)
     : ChSteeringController(path), m_Kp(0), m_Ki(0), m_Kd(0) {
     // Create a tracker object associated with the given path.
-    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path));
+    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path, isClosedPath));
 }
 
-ChPathSteeringController::ChPathSteeringController(const std::string& filename, std::shared_ptr<ChBezierCurve> path)
+ChPathSteeringController::ChPathSteeringController(const std::string& filename,
+                                                   std::shared_ptr<ChBezierCurve> path,
+                                                   bool isClosedPath)
     : ChSteeringController(path) {
     // Create a tracker object associated with the given path.
-    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path));
+    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path, isClosedPath));
 
     Document d;
     ReadFileJSON(filename, d);
@@ -193,26 +195,8 @@ void ChPathSteeringController::Reset(const ChVehicle& vehicle) {
 // factors for the input channels, which default to 1
 // -----------------------------------------------------------------------------
 
-ChPathSteeringControllerXT::ChPathSteeringControllerXT(std::shared_ptr<ChBezierCurve> path, double max_wheel_turn_angle)
-    : ChSteeringController(path),
-      m_R_threshold(100000.0),
-      m_max_wheel_turn_angle(25.0 * CH_C_DEG_TO_RAD),
-      m_filters_initialized(false),
-      m_T1_delay(30.0 / 1000.0),
-      m_Kp(0.4),
-      m_Wy(1),
-      m_Wh(1),
-      m_Wa(1),
-      m_res(0) {
-    // Create a tracker object associated with the given path.
-    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path));
-    if (max_wheel_turn_angle > 0.0) {
-        m_max_wheel_turn_angle = max_wheel_turn_angle;
-    }
-}
-
-ChPathSteeringControllerXT::ChPathSteeringControllerXT(const std::string& filename,
-                                                       std::shared_ptr<ChBezierCurve> path,
+ChPathSteeringControllerXT::ChPathSteeringControllerXT(std::shared_ptr<ChBezierCurve> path,
+                                                       bool isClosedPath,
                                                        double max_wheel_turn_angle)
     : ChSteeringController(path),
       m_R_threshold(100000.0),
@@ -225,7 +209,28 @@ ChPathSteeringControllerXT::ChPathSteeringControllerXT(const std::string& filena
       m_Wa(1),
       m_res(0) {
     // Create a tracker object associated with the given path.
-    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path));
+    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path, isClosedPath));
+    if (max_wheel_turn_angle > 0.0) {
+        m_max_wheel_turn_angle = max_wheel_turn_angle;
+    }
+}
+
+ChPathSteeringControllerXT::ChPathSteeringControllerXT(const std::string& filename,
+                                                       std::shared_ptr<ChBezierCurve> path,
+                                                       bool isClosedPath,
+                                                       double max_wheel_turn_angle)
+    : ChSteeringController(path),
+      m_R_threshold(100000.0),
+      m_max_wheel_turn_angle(25.0 * CH_C_DEG_TO_RAD),
+      m_filters_initialized(false),
+      m_T1_delay(30.0 / 1000.0),
+      m_Kp(0.4),
+      m_Wy(1),
+      m_Wh(1),
+      m_Wa(1),
+      m_res(0) {
+    // Create a tracker object associated with the given path.
+    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path, isClosedPath));
     if (max_wheel_turn_angle > 0.0) {
         m_max_wheel_turn_angle = max_wheel_turn_angle;
     }
@@ -640,9 +645,11 @@ double ChPathSteeringControllerSR::Advance(const ChVehicle& vehicle, double step
 // Stanford, CA 94305, USA
 
 ChPathSteeringControllerStanley::ChPathSteeringControllerStanley(std::shared_ptr<ChBezierCurve> path,
+                                                                 bool isClosedPath,
                                                                  double max_wheel_turn_angle)
     : m_delayFilter(nullptr),
       ChSteeringController(path),
+      m_isClosedPath(isClosedPath),
       m_delta(0),
       m_delta_max(max_wheel_turn_angle),
       m_umin(1),
@@ -650,14 +657,21 @@ ChPathSteeringControllerStanley::ChPathSteeringControllerStanley(std::shared_ptr
       m_deadZone(0.0),
       m_Tdelay(0.4) {
     SetGains(0.0, 0.0, 0.0);
-    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path));
+    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path, isClosedPath));
+    if (m_isClosedPath) {
+        GetLog() << "Path is closed.\n";
+    } else {
+        GetLog() << "Path is open.\n";
+    }
 }
 
 ChPathSteeringControllerStanley::ChPathSteeringControllerStanley(const std::string& filename,
                                                                  std::shared_ptr<ChBezierCurve> path,
+                                                                 bool isClosedPath,
                                                                  double max_wheel_turn_angle)
     : m_delayFilter(nullptr),
       ChSteeringController(path),
+      m_isClosedPath(isClosedPath),
       m_delta(0),
       m_delta_max(max_wheel_turn_angle),
       m_umin(1),
@@ -665,7 +679,7 @@ ChPathSteeringControllerStanley::ChPathSteeringControllerStanley(const std::stri
       m_deadZone(0.0),
       m_Tdelay(0.4) {
     SetGains(0.0, 0.0, 0.0);
-    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path));
+    m_tracker = std::unique_ptr<ChBezierCurveTracker>(new ChBezierCurveTracker(path, isClosedPath));
     Document d;
     ReadFileJSON(filename, d);
     if (d.IsNull())

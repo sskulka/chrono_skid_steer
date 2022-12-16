@@ -17,30 +17,27 @@
 // =============================================================================
 
 #include "chrono/ChConfig.h"
-#include "chrono/fea/ChMeshExporter.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
-#include "chrono_vehicle/driver/ChPathFollowerDriver.h"
-#include "chrono_vehicle/utils/ChVehiclePath.h"
 #include "chrono_vehicle/tracked_vehicle/track_shoe/ChTrackShoeBand.h"
-#include "chrono_vehicle/tracked_vehicle/track_assembly/ChTrackAssemblyBandANCF.h"
 
 #include "chrono_models/vehicle/m113/M113_SimpleCVTPowertrain.h"
-#include "chrono_models/vehicle/m113/M113.h"
+#include "chrono_models/vehicle/m113/M113_Vehicle.h"
 
 #ifdef CHRONO_IRRLICHT
-    #include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
-    #define USE_IRRLICHT
+#include "chrono_vehicle/driver/ChIrrGuiDriver.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
+#define USE_IRRLICHT
 #endif
 
 #ifdef CHRONO_MUMPS
-    #include "chrono_mumps/ChSolverMumps.h"
+#include "chrono_mumps/ChSolverMumps.h"
 #endif
 
 #ifdef CHRONO_PARDISO_MKL
-    #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
+#include "chrono_pardisomkl/ChSolverPardisoMKL.h"
 #endif
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -55,53 +52,62 @@ using std::endl;
 // =============================================================================
 // USER SETTINGS
 // =============================================================================
+// Initial vehicle position
+ChVector<> initLoc(0, 0, 1.1);
 
-// Band track type (BAND_BUSHING or BAND_ANCF)
-TrackShoeType shoe_type = TrackShoeType::BAND_ANCF;
+// Initial vehicle orientation
+ChQuaternion<> initRot(1, 0, 0, 0);
 
-// ANCF element type for BAND_ANCF (ANCF_4 or ANCF_8)
-ChTrackShoeBandANCF::ElementType element_type = ChTrackShoeBandANCF::ElementType::ANCF_8;
+// Rigid terrain dimensions
+double terrainLength = 100.0;  // size in X direction
+double terrainWidth = 100.0;   // size in Y direction
 
-// Number of ANCF elements in one track shoe web mesh
-int num_elements_length = 1;
-int num_elements_width = 1;
+// Simulation length
+double t_end = 1.0;
 
-// Enable/disable curvature constraints (ANCF_8 only)
-bool constrain_curvature = true;
+// Simulation step size
+double step_size = 1e-4;
 
-// Simulation step size and duration
-double step_size = 2.5e-5;
-double t_end = 10.0;
-
-// Linear solver (MUMPS, PARDISO_MKL, or SPARSE_LU)
+// Linear solver (MUMPS or PARDISO_MKL)
 ChSolver::Type solver_type = ChSolver::Type::MUMPS;
+
+// Time interval between two render frames
+double render_step_size = 1.0 / 50;  // FPS = 50
+
+// Output directories
+const std::string out_dir = GetChronoOutputPath() + "M113_BAND";
+const std::string pov_dir = out_dir + "/POVRAY";
+const std::string img_dir = out_dir + "/IMG";
 
 // Verbose level
 bool verbose_solver = false;
 bool verbose_integrator = false;
 
 // Output
-bool output = false;
+bool output = true;
 bool dbg_output = false;
+bool povray_output = false;
 bool img_output = false;
-bool vtk_output = false;
-double img_FPS = 50;
-double vtk_FPS = 50;
 
-// Output directories
-const std::string out_dir = GetChronoOutputPath() + "M113_BAND";
-const std::string img_dir = out_dir + "/IMG";
-const std::string vtk_dir = out_dir + "/VTK";
+// =============================================================================
+
+// Dummy driver class (always returns 1 for throttle, 0 for all other inputs)
+class MyDriver {
+  public:
+    MyDriver() {}
+    double GetThrottle() const { return 1; }
+    double GetSteering() const { return 0; }
+    double GetBraking() const { return 0; }
+    void Synchronize(double time) {}
+    void Advance(double step) {}
+};
 
 // =============================================================================
 
 // Forward declarations
 void AddFixedObstacles(ChSystem* system);
-void WriteVehicleVTK(int frame, ChTrackedVehicle& vehicle);
-void WriteMeshVTK(int frame, std::shared_ptr<fea::ChMesh> meshL, std::shared_ptr<fea::ChMesh> meshR);
 
 // =============================================================================
-
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
@@ -109,74 +115,35 @@ int main(int argc, char* argv[]) {
     // Construct the M113 vehicle
     // --------------------------
 
-    M113 m113;
+    CollisionType chassis_collision_type = CollisionType::PRIMITIVES;
+    M113_Vehicle vehicle(false, TrackShoeType::BAND_BUSHING, DoublePinTrackShoeType::TWO_CONNECTORS,
+                         DrivelineTypeTV::SIMPLE, BrakeType::SIMPLE, false, false, false, ChContactMethod::SMC,
+                         chassis_collision_type);
 
-    m113.SetTrackShoeType(shoe_type);
-    m113.SetANCFTrackShoeElementType(element_type);
-    m113.SetANCFTrackShoeNumElements(num_elements_length, num_elements_width);
-    m113.SetANCFTrackShoeCurvatureConstraints(constrain_curvature);
-    m113.SetPowertrainType(PowertrainModelType::SIMPLE_CVT);
-    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
-    m113.SetBrakeType(BrakeType::SIMPLE);
-    m113.SetSuspensionBushings(false);
-    m113.SetGyrationMode(false);
+    // Disable gravity in this simulation
+    ////vehicle.GetSystem()->Set_G_acc(ChVector<>(0, 0, 0));
 
-    m113.SetContactMethod(ChContactMethod::SMC);
-    m113.SetCollisionSystemType(collision::ChCollisionSystemType::BULLET);
-    m113.SetChassisCollisionType(CollisionType::NONE);
-    m113.SetChassisFixed(false);
+    // Control steering type (enable crossdrive capability)
+    ////vehicle.GetDriveline()->SetGyrationMode(true);
 
     // ------------------------------------------------
     // Initialize the vehicle at the specified position
     // ------------------------------------------------
 
-    m113.SetInitPosition(ChCoordsys<>(ChVector<>(0, 0, 0.8), QUNIT));
-    m113.Initialize();
-
-    auto& vehicle = m113.GetVehicle();
-    auto sys = vehicle.GetSystem();
-
-    std::shared_ptr<fea::ChMesh> meshL;
-    std::shared_ptr<fea::ChMesh> meshR;
-    if (shoe_type == TrackShoeType::BAND_ANCF) {
-        meshL =
-            std::static_pointer_cast<ChTrackAssemblyBandANCF>(vehicle.GetTrackAssembly(VehicleSide::LEFT))->GetMesh();
-        meshR =
-            std::static_pointer_cast<ChTrackAssemblyBandANCF>(vehicle.GetTrackAssembly(VehicleSide::RIGHT))->GetMesh();
-
-        cout << "[FEA mesh left]  n_nodes = " << meshL->GetNnodes() << " n_elements = " << meshL->GetNelements()
-             << endl;
-        cout << "[FEA mesh right] n_nodes = " << meshR->GetNnodes() << " n_elements = " << meshR->GetNelements()
-             << endl;
-    }
+    vehicle.Initialize(ChCoordsys<>(initLoc, initRot));
 
     // Set visualization type for vehicle components.
-    vehicle.SetChassisVisualizationType(VisualizationType::NONE);
-    vehicle.SetSprocketVisualizationType(VisualizationType::MESH);
+    vehicle.SetChassisVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
     vehicle.SetIdlerVisualizationType(VisualizationType::PRIMITIVES);
-    vehicle.SetIdlerWheelVisualizationType(VisualizationType::MESH);
     vehicle.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
-    vehicle.SetRoadWheelVisualizationType(VisualizationType::MESH);
-    vehicle.SetTrackShoeVisualizationType(VisualizationType::MESH);
-
-    // Export sprocket and shoe tread visualization meshes
-    auto trimesh =
-        vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetSprocket()->CreateVisualizationMesh(0.15, 0.03, 0.02);
-    geometry::ChTriangleMeshConnected::WriteWavefront(out_dir + "/M113_Sprocket.obj", {*trimesh});
-    std::static_pointer_cast<ChTrackShoeBand>(vehicle.GetTrackShoe(LEFT, 0))->WriteTreadVisualizationMesh(out_dir);
-
-    // Disable gravity in this simulation
-    ////sys->Set_G_acc(ChVector<>(0, 0, 0));
+    vehicle.SetIdlerWheelVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
     // --------------------------------------------------
     // Control internal collisions and contact monitoring
     // --------------------------------------------------
-
-    // Disable contact for the FEA track meshes
-    std::static_pointer_cast<ChTrackAssemblyBandANCF>(vehicle.GetTrackAssembly(LEFT))
-        ->SetContactSurfaceType(ChTrackAssemblyBandANCF::ContactSurfaceType::NONE);
-    std::static_pointer_cast<ChTrackAssemblyBandANCF>(vehicle.GetTrackAssembly(RIGHT))
-        ->SetContactSurfaceType(ChTrackAssemblyBandANCF::ContactSurfaceType::NONE);
 
     // Enable contact on all tracked vehicle parts, except the left sprocket
     ////vehicle.SetCollide(TrackedCollisionFlag::ALL & (~TrackedCollisionFlag::SPROCKET_LEFT));
@@ -195,48 +162,40 @@ int main(int argc, char* argv[]) {
     ////                        TrackedCollisionFlag::SHOES_LEFT | TrackedCollisionFlag::IDLER_LEFT);
 
     // Monitor only contacts involving the chassis.
-    ////vehicle.MonitorContacts(TrackedCollisionFlag::CHASSIS);
-
-    // Render contact normals and/or contact forces.
-    ////vehicle.SetRenderContactNormals(true);
-    ////vehicle.SetRenderContactForces(true, 1e-4);
+    vehicle.MonitorContacts(TrackedCollisionFlag::CHASSIS);
 
     // Collect contact information.
     // If enabled, number of contacts and local contact point locations are collected for all
     // monitored parts.  Data can be written to a file by invoking ChTrackedVehicle::WriteContacts().
     ////vehicle.SetContactCollection(true);
 
+    // ----------------------------
+    // Create the powertrain system
+    // ----------------------------
+
+    auto powertrain = chrono_types::make_shared<M113_SimpleCVTPowertrain>("powertrain");
+    vehicle.InitializePowertrain(powertrain);
+
     // ------------------
     // Create the terrain
     // ------------------
 
-    RigidTerrain terrain(sys);
-    ChContactMaterialData minfo;
-    minfo.mu = 0.9f;
-    minfo.cr = 0.2f;
-    minfo.Y = 2e7f;
-    auto patch_mat = minfo.CreateMaterial(ChContactMethod::SMC);
-    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, 100.0, 100.0);
+    RigidTerrain terrain(vehicle.GetSystem());
+    auto patch_mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    patch_mat->SetFriction(0.9f);
+    patch_mat->SetRestitution(0.01f);
+    patch_mat->SetYoungModulus(2e7f);
+    patch_mat->SetPoissonRatio(0.3f);
+    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, terrainLength, terrainWidth);
     patch->SetColor(ChColor(0.5f, 0.8f, 0.5f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
     terrain.Initialize();
-
-    // -------------------------------------------
-    // Create a straight-line path follower driver
-    // -------------------------------------------
-
-    auto path = chrono::vehicle::StraightLinePath(ChVector<>(0.0, 0, 0.5), ChVector<>(100.0, 0, 0.5), 50);
-    ChPathFollowerDriver driver(vehicle, path, "my_path", 5.0);
-    driver.GetSteeringController().SetLookAheadDistance(5.0);
-    driver.GetSteeringController().SetGains(0.5, 0, 0);
-    driver.GetSpeedController().SetGains(0.6, 0.3, 0);
-    driver.Initialize();
 
     // -------------------
     // Add fixed obstacles
     // -------------------
 
-    AddFixedObstacles(sys);
+    AddFixedObstacles(vehicle.GetSystem());
 
 #ifdef USE_IRRLICHT
     // ---------------------------------------
@@ -253,6 +212,27 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddLogo();
     vis->AttachVehicle(&vehicle);
+
+    // ------------------------
+    // Create the driver system
+    // ------------------------
+
+    ChIrrGuiDriver driver(*vis);
+
+    // Set the time response for keyboard inputs.
+    double steering_time = 0.5;  // time to go from 0 to +1 (or from 0 to -1)
+    double throttle_time = 1.0;  // time to go from 0 to +1
+    double braking_time = 0.3;   // time to go from 0 to +1
+    driver.SetSteeringDelta(render_step_size / steering_time);
+    driver.SetThrottleDelta(render_step_size / throttle_time);
+    driver.SetBrakingDelta(render_step_size / braking_time);
+
+    driver.Initialize();
+#else
+
+    // Create a default driver (always returns 1 for throttle, 0 for all other inputs)
+    MyDriver driver;
+
 #endif
 
     // -----------------
@@ -264,27 +244,26 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    if (povray_output) {
+        if (!filesystem::create_directory(filesystem::path(pov_dir))) {
+            cout << "Error creating directory " << pov_dir << endl;
+            return 1;
+        }
+        terrain.ExportMeshPovray(out_dir);
+    }
+
     if (img_output) {
         if (!filesystem::create_directory(filesystem::path(img_dir))) {
             cout << "Error creating directory " << img_dir << endl;
             return 1;
         }
     }
-    if (vtk_output) {
-        if (!filesystem::create_directory(filesystem::path(vtk_dir))) {
-            cout << "Error creating directory " << vtk_dir << endl;
-            return 1;
-        }
-    }
 
-    // Setup chassis position output with column headers
+    //Setup chassis position output with column headers
     utils::CSV_writer csv("\t");
     csv.stream().setf(std::ios::scientific | std::ios::showpos);
     csv.stream().precision(6);
-    csv << "Time (s)"
-        << "Chassis X Pos (m)"
-        << "Chassis Y Pos (m)"
-        << "Chassis Z Pos (m)" << endl;
+    csv << "Time (s)" << "Chassis X Pos (m)" << "Chassis Y Pos (m)" << "Chassis Z Pos (m)" << endl;
 
     // Set up vehicle output
     ////vehicle.SetChassisOutput(true);
@@ -294,14 +273,15 @@ int main(int argc, char* argv[]) {
     // Generate JSON information with available output channels
     ////vehicle.ExportComponentList(out_dir + "/component_list.json");
 
+    // Export visualization mesh for shoe tread body
+    auto shoe0 = std::static_pointer_cast<ChTrackShoeBand>(vehicle.GetTrackShoe(LEFT, 0));
+    shoe0->WriteTreadVisualizationMesh(out_dir);
+    shoe0->ExportTreadVisualizationMeshPovray(out_dir);
+
     // ------------------------------
     // Solver and integrator settings
     // ------------------------------
 
-    // Linear solver
-#if !defined(CHRONO_PARDISO_MKL) && !defined(CHRONO_MUMPS)
-    solver_type = ChSolver::Type::SPARSE_LU;
-#endif
 #ifndef CHRONO_PARDISO_MKL
     if (solver_type == ChSolver::Type::PARDISO_MKL)
         solver_type = ChSolver::Type::MUMPS;
@@ -312,49 +292,38 @@ int main(int argc, char* argv[]) {
 #endif
 
     switch (solver_type) {
-        case ChSolver::Type::MUMPS: {
 #ifdef CHRONO_MUMPS
-            auto solver = chrono_types::make_shared<ChSolverMumps>();
-            solver->LockSparsityPattern(true);
-            solver->EnableNullPivotDetection(true);
-            solver->GetMumpsEngine().SetICNTL(14, 50);
-            solver->SetVerbose(verbose_solver);
-            sys->SetSolver(solver);
-#endif
+        case ChSolver::Type::MUMPS : {
+            auto mumps_solver = chrono_types::make_shared<ChSolverMumps>();
+            mumps_solver->LockSparsityPattern(true);
+            mumps_solver->SetVerbose(verbose_solver);
+            vehicle.GetSystem()->SetSolver(mumps_solver);
             break;
         }
-        case ChSolver::Type::PARDISO_MKL: {
+#endif
 #ifdef CHRONO_PARDISO_MKL
-            auto solver = chrono_types::make_shared<ChSolverPardisoMKL>();
-            solver->LockSparsityPattern(true);
-            solver->SetVerbose(verbose_solver);
-            sys->SetSolver(solver);
+        case ChSolver::Type::PARDISO_MKL : {
+            auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
+            mkl_solver->LockSparsityPattern(true);
+            mkl_solver->SetVerbose(verbose_solver);
+            vehicle.GetSystem()->SetSolver(mkl_solver);
+            break;
+        }
 #endif
+        default:
             break;
-        }
-        default: {
-            auto solver = chrono_types::make_shared<ChSolverSparseLU>();
-            solver->LockSparsityPattern(true);
-            solver->SetVerbose(verbose_solver);
-            sys->SetSolver(solver);
-            break;
-        }
     }
 
-    // Integrator
-    sys->SetTimestepperType(ChTimestepper::Type::HHT);
-    auto integrator = std::static_pointer_cast<ChTimestepperHHT>(sys->GetTimestepper());
+    vehicle.GetSystem()->SetTimestepperType(ChTimestepper::Type::HHT);
+    auto integrator = std::static_pointer_cast<ChTimestepperHHT>(vehicle.GetSystem()->GetTimestepper());
     integrator->SetAlpha(-0.2);
-    integrator->SetMaxiters(20);
-    integrator->SetAbsTolerances(1e-4, 1e2);
+    integrator->SetMaxiters(50);
+    integrator->SetAbsTolerances(1e-2, 1e2);
     integrator->SetMode(ChTimestepperHHT::ACCELERATION);
     integrator->SetStepControl(false);
     integrator->SetModifiedNewton(true);
-    integrator->SetScaling(false);
+    integrator->SetScaling(true);
     integrator->SetVerbose(verbose_integrator);
-
-    // OpenMP threads
-    sys->SetNumThreads(4, 4, 4);
 
     // ---------------
     // Simulation loop
@@ -366,31 +335,30 @@ int main(int argc, char* argv[]) {
     TerrainForces shoe_forces_left(vehicle.GetNumTrackShoes(LEFT));
     TerrainForces shoe_forces_right(vehicle.GetNumTrackShoes(RIGHT));
 
-    // Number of steps
-    int sim_steps = (int)std::ceil(t_end / step_size);          // total number of simulation steps
-    int img_steps = (int)std::ceil(1 / (img_FPS * step_size));  // interval between IMG output frames
-    int vtk_steps = (int)std::ceil(1 / (vtk_FPS * step_size));  // interval between VIS postprocess output frames
+    // Number of steps to run for the simulation
+    int sim_steps = (int)std::ceil(t_end / step_size);
+
+    // Number of simulation steps between two 3D view render frames
+    int render_steps = (int)std::ceil(render_step_size / step_size);
 
     // Total execution time (for integration)
     double total_timing = 0;
 
     // Initialize simulation frame counter
     int step_number = 0;
-    int img_frame = 0;
-    int vtk_frame = 0;
+    int render_frame = 0;
 
     while (step_number < sim_steps) {
-        double time = vehicle.GetChTime();
         const ChVector<>& c_pos = vehicle.GetPos();
 
         // File output
         if (output) {
-            csv << time << c_pos.x() << c_pos.y() << c_pos.z() << endl;
+            csv << vehicle.GetSystem()->GetChTime() << c_pos.x() << c_pos.y() << c_pos.z() << endl;
         }
 
         // Debugging (console) output
         if (dbg_output) {
-            cout << "Time: " << time << endl;
+            cout << "Time: " << vehicle.GetSystem()->GetChTime() << endl;
             const ChFrameMoving<>& c_ref = vehicle.GetChassisBody()->GetFrame_REF_to_abs();
             cout << "      chassis:    " << c_pos.x() << "  " << c_pos.y() << "  " << c_pos.z() << endl;
             {
@@ -430,19 +398,21 @@ int main(int argc, char* argv[]) {
         vis->Render();
 #endif
 
-        if (img_output && step_number % img_steps == 0) {
-#ifdef USE_IRRLICHT
-            std::string filename = img_dir + "/img." + std::to_string(img_frame) + ".jpg";
-            vis->WriteImageToFile(filename);
-            img_frame++;
-#endif
-        }
+        if (step_number % render_steps == 0) {
+            if (povray_output) {
+                char filename[100];
+                sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
+                utils::WriteVisualizationAssets(vehicle.GetSystem(), filename);
+            }
 
-        if (vtk_output && step_number % vtk_steps == 0) {
-            WriteVehicleVTK(vtk_frame, vehicle);
-            if (shoe_type == TrackShoeType::BAND_ANCF)
-                WriteMeshVTK(vtk_frame, meshL, meshR);
-            vtk_frame++;
+#ifdef USE_IRRLICHT
+            if (img_output && step_number > 200) {
+                char filename[100];
+                sprintf(filename, "%s/img_%03d.jpg", img_dir.c_str(), render_frame + 1);
+                vis->WriteImageToFile(filename);
+            }
+#endif
+            render_frame++;
         }
 
         // Collect data from modules
@@ -451,24 +421,18 @@ int main(int argc, char* argv[]) {
         vehicle.GetTrackShoeStates(RIGHT, shoe_states_right);
 
         // Update modules (process data from other modules)
+        double time = vehicle.GetChTime();
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        m113.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
+        vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
 #ifdef USE_IRRLICHT
         vis->Synchronize("", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
-        if (step_number == 100) {
-            step_size = 5e-5;
-        }
-        if (step_number == 140) {
-            step_size = 1e-4;
-        }
-
         driver.Advance(step_size);
         terrain.Advance(step_size);
-        m113.Advance(step_size);
+        vehicle.Advance(step_size);
 #ifdef USE_IRRLICHT
         vis->Advance(step_size);
 #endif
@@ -481,7 +445,7 @@ int main(int argc, char* argv[]) {
         // Increment frame number
         step_number++;
 
-        double step_timing = sys->GetTimerStep();
+        double step_timing = vehicle.GetSystem()->GetTimerStep();
         total_timing += step_timing;
 
         cout << "Step: " << step_number;
@@ -536,76 +500,4 @@ void AddFixedObstacles(ChSystem* system) {
     obstacle->GetCollisionModel()->BuildModel();
 
     system->AddBody(obstacle);
-}
-
-// =============================================================================
-
-void WriteMeshVTK(int frame, std::shared_ptr<fea::ChMesh> meshL, std::shared_ptr<fea::ChMesh> meshR) {
-    static bool generate_connectivity = true;
-    if (generate_connectivity) {
-        fea::ChMeshExporter::WriteMesh(meshL, vtk_dir + "/meshL_connectivity.out");
-        fea::ChMeshExporter::WriteMesh(meshR, vtk_dir + "/meshR_connectivity.out");
-        generate_connectivity = false;
-    }
-    std::string filenameL = vtk_dir + "/meshL." + std::to_string(frame) + ".vtk";
-    std::string filenameR = vtk_dir + "/meshR." + std::to_string(frame) + ".vtk";
-    fea::ChMeshExporter::WriteFrame(meshL, vtk_dir + "/meshL_connectivity.out", filenameL);
-    fea::ChMeshExporter::WriteFrame(meshR, vtk_dir + "/meshR_connectivity.out", filenameR);
-}
-
-void WriteVehicleVTK(int frame, ChTrackedVehicle& vehicle) {
-    {
-        utils::CSV_writer csv(",");
-        auto num_shoes_L = vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetNumTrackShoes();
-        auto num_shoes_R = vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetNumTrackShoes();
-        for (size_t i = 0; i < num_shoes_L; i++) {
-            const auto& shoe = vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetTrackShoe(i)->GetShoeBody();
-            csv << shoe->GetPos() << shoe->GetRot() << shoe->GetPos_dt() << shoe->GetWvel_loc() << endl;
-        }
-        for (size_t i = 0; i < num_shoes_R; i++) {
-            const auto& shoe = vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetTrackShoe(i)->GetShoeBody();
-            csv << shoe->GetPos() << shoe->GetRot() << shoe->GetPos_dt() << shoe->GetWvel_loc() << endl;
-        }
-        csv.write_to_file(vtk_dir + "/shoes." + std::to_string(frame) + ".vtk", "x,y,z,e0,e1,e2,e3,vx,vy,vz,ox,oy,oz");
-    }
-
-    {
-        utils::CSV_writer csv(",");
-        auto num_wheels_L = vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetNumTrackSuspensions();
-        auto num_wheels_R = vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetNumTrackSuspensions();
-        for (size_t i = 0; i < num_wheels_L; i++) {
-            const auto& wheel = vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetTrackSuspension(i)->GetWheelBody();
-            csv << wheel->GetPos() << wheel->GetRot() << wheel->GetPos_dt() << wheel->GetWvel_loc() << endl;
-        }
-        for (size_t i = 0; i < num_wheels_R; i++) {
-            const auto& wheel = vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetTrackSuspension(i)->GetWheelBody();
-            csv << wheel->GetPos() << wheel->GetRot() << wheel->GetPos_dt() << wheel->GetWvel_loc() << endl;
-        }
-        csv.write_to_file(vtk_dir + "/wheels." + std::to_string(frame) + ".vtk", "x,y,z,e0,e1,e2,e3,vx,vy,vz,ox,oy,oz");
-    }
-
-    {
-        utils::CSV_writer csv(",");
-        const auto& idlerL = vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetIdler()->GetIdlerWheel()->GetBody();
-        const auto& idlerR = vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetIdler()->GetIdlerWheel()->GetBody();
-        csv << idlerL->GetPos() << idlerL->GetRot() << idlerL->GetPos_dt() << idlerL->GetWvel_loc() << endl;
-        csv << idlerR->GetPos() << idlerR->GetRot() << idlerR->GetPos_dt() << idlerR->GetWvel_loc() << endl;
-        csv.write_to_file(vtk_dir + "/idlers." + std::to_string(frame) + ".vtk", "x,y,z,e0,e1,e2,e3,vx,vy,vz,ox,oy,oz");
-    }
-
-    {
-        utils::CSV_writer csv(",");
-        const auto& gearL = vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetSprocket()->GetGearBody();
-        const auto& gearR = vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetSprocket()->GetGearBody();
-        csv << gearL->GetPos() << gearL->GetRot() << gearL->GetPos_dt() << gearL->GetWvel_loc() << endl;
-        csv << gearR->GetPos() << gearR->GetRot() << gearR->GetPos_dt() << gearR->GetWvel_loc() << endl;
-        csv.write_to_file(vtk_dir + "/sprockets." + std::to_string(frame) + ".vtk", "x,y,z,e0,e1,e2,e3,vx,vy,vz,ox,oy,oz");
-    }
-
-    {
-        utils::CSV_writer csv(",");
-        auto chassis = vehicle.GetChassisBody();
-        csv << chassis->GetPos() << chassis->GetRot() << chassis->GetPos_dt() << chassis->GetWvel_loc() << endl;
-        csv.write_to_file(vtk_dir + "/chassis." + std::to_string(frame) + ".vtk", "x,y,z,e0,e1,e2,e3,vx,vy,vz,ox,oy,oz");
-    }
 }

@@ -39,9 +39,6 @@ class CH_VEHICLE_API MultiLink : public ChMultiLink {
 
     virtual bool UseTierodBodies() const override { return m_use_tierod_bodies; }
 
-    virtual double getCamberAngle() const override { return m_camber_angle; }
-    virtual double getToeAngle() const override { return m_toe_angle; }
-
     virtual double getSpindleMass() const override { return m_spindleMass; }
     virtual double getUpperArmMass() const override { return m_upperArmMass; }
     virtual double getLateralMass() const override { return m_lateralMass; }
@@ -85,9 +82,6 @@ class CH_VEHICLE_API MultiLink : public ChMultiLink {
     ChVector<> m_directions[NUM_DIRS];
 
     bool m_use_tierod_bodies;
-
-    double m_camber_angle;
-    double m_toe_angle;
 
     double m_spindleMass;
     double m_upperArmMass;

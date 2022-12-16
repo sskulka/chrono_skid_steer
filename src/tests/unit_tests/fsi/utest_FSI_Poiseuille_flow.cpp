@@ -85,24 +85,25 @@ void CreateSolidPhase(ChSystemSMC& sysMBS, ChSystemFsi& sysFSI) {
 
     // Size and position of the bottom and top walls
     auto initSpace0 = sysFSI.GetInitialSpacing();
-    ChVector<> size_XY(bxDim / 2, byDim / 2, 2 * initSpace0);
-    ChVector<> pos_zn(0, 0, -3 * initSpace0);
-    ChVector<> pos_zp(0, 0, bzDim + 1 * initSpace0);
+    ChVector<> sizeWall(bxDim / 2, byDim / 2, 2 * initSpace0);
+    ChVector<> posBottom(0, 0, -3 * initSpace0);
+    ChVector<> posTop(0, 0, bzDim + 1 * initSpace0);
 
     // Add a geometry to the body and set the collision model
-    chrono::utils::AddBoxGeometry(body.get(), mysurfmaterial, size_XY, pos_zn, QUNIT, true);
+    chrono::utils::AddBoxGeometry(body.get(), mysurfmaterial, sizeWall, posBottom, QUNIT, true);
     body->GetCollisionModel()->BuildModel();
     sysMBS.AddBody(body);
 
     // Add BCE particles to the bottom and top wall boundary
-    sysFSI.AddContainerBCE(body, ChFrame<>(), ChVector<>(bxDim, byDim, bzDim), ChVector<int>(0, 0, 2));
+    sysFSI.AddBoxBCE(body, posTop, QUNIT, sizeWall, 12);
+    sysFSI.AddBoxBCE(body, posBottom, QUNIT, sizeWall, 12);
 }
 
 // ===============================
 int main(int argc, char* argv[]) {
     // Create a physical system and a corresponding FSI system
     ChSystemSMC sysMBS;
-    ChSystemFsi sysFSI(&sysMBS);
+    ChSystemFsi sysFSI(sysMBS);
 
     // Initialize the parameters using an input JSON file
     std::string myJson = GetChronoDataFile("fsi/input_json/demo_FSI_Poiseuille_flow_Explicit.json");

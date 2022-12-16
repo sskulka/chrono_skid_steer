@@ -125,7 +125,7 @@ class CH_VEHICLE_API ChVehicleCosimTireNode : public ChVehicleCosimBaseNode {
     virtual double GetTireWidth() const = 0;
 
     /// Initialize the tire by attaching it to the provided ChWheel.
-    /// A derived class must load m_geometry (collision shape and contact material).
+    /// A derived class must load m_contact_mat and m_mesh_data.
     virtual void InitializeTire(std::shared_ptr<ChWheel>) = 0;
 
     /// Apply the spindle state.
@@ -180,7 +180,8 @@ class CH_VEHICLE_API ChVehicleCosimTireNode : public ChVehicleCosimBaseNode {
     std::shared_ptr<ChWheel> m_wheel;   ///< wheel subsystem (to which a tire is attached)
 
     // Communication data (loaded by derived classes)
-    ChVehicleGeometry m_geometry; ///< tire geometry and contact material
+    std::shared_ptr<ChMaterialSurfaceSMC> m_contact_mat;  ///< tire contact material
+    MeshData m_mesh_data;                                 ///< tire mesh data
 
   private:
     void InitializeSystem();

@@ -23,7 +23,6 @@ SET(ChronoEngine_MODAL_SOURCES
     ChModalAssembly.cpp
     ChModalDamping.cpp
     ChEigenvalueSolver.cpp
-    ChKrylovSchurEig.cpp
 )
 
 SET(ChronoEngine_MODAL_HEADERS
@@ -31,7 +30,6 @@ SET(ChronoEngine_MODAL_HEADERS
     ChModalAssembly.h
     ChModalDamping.h
     ChEigenvalueSolver.h
-    ChKrylovSchurEig.h
 )
 
 SOURCE_GROUP("" FILES 

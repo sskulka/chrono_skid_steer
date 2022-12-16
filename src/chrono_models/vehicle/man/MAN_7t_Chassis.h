@@ -50,6 +50,8 @@ class CH_MODELS_API MAN_7t_Chassis : public ChRigidChassis {
     virtual ChMatrix33<> GetBodyInertia() const override { return m_body_inertia; }
     virtual ChFrame<> GetBodyCOMFrame() const override { return ChFrame<>(m_body_COM_loc, QUNIT); }
 
+    virtual void CreateContactMaterials(ChContactMethod contact_method) override;
+
     ChMatrix33<> m_body_inertia;
 
     static const double m_body_mass;

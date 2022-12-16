@@ -17,16 +17,15 @@ set(PROGRAMS
     demo_VEH_Cosim_WheelRig
     demo_VEH_Cosim_WheelRig_CustomTerrain
     demo_VEH_Cosim_WheeledVehicle
-    demo_VEH_Cosim_TrackedVehicle
     demo_VEH_Cosim_Viper
     demo_VEH_Cosim_Curiosity
     )
 
-#if(ENABLE_MODULE_DISTRIBUTED)
-#  set(PROGRAMS ${PROGRAMS}
-#      demo_VEH_Cosim_WheelRig_DistributedTerrain
-#      )
-#endif()
+if(ENABLE_MODULE_DISTRIBUTED)
+  set(PROGRAMS ${PROGRAMS}
+      demo_VEH_Cosim_WheelRig_DistributedTerrain
+      )
+endif()
 
 include_directories(${CH_VEHCOSIM_INCLUDES})
 

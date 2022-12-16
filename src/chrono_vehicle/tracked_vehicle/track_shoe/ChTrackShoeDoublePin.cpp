@@ -76,8 +76,6 @@ ChTrackShoeDoublePin::~ChTrackShoeDoublePin() {
 void ChTrackShoeDoublePin::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
                                       const ChVector<>& location,
                                       const ChQuaternion<>& rotation) {
-    ChTrackShoeSegmented::Initialize(chassis, location, rotation);
-
     ChSystem* sys = chassis->GetSystem();
 
     // Express the track shoe location and orientation in global frame.
@@ -132,8 +130,11 @@ void ChTrackShoeDoublePin::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
         } break;
     }
 
+    // Create all contact materials
+    CreateContactMaterials(sys->GetContactMethod());
+
     // Add contact geometry on shoe body
-    m_geometry.CreateCollisionShapes(m_shoe, TrackedCollisionFamily::SHOES, sys->GetContactMethod());
+    m_geometry.AddCollisionShapes(m_shoe, TrackedCollisionFamily::SHOES);
     m_shoe->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(TrackedCollisionFamily::SHOES);
 }
 

@@ -31,7 +31,10 @@
 namespace chrono {
 namespace vehicle {
 
-ChClosedLoopDriver::ChClosedLoopDriver(ChVehicle& vehicle, const std::string& path_name, double target_speed)
+ChClosedLoopDriver::ChClosedLoopDriver(ChVehicle& vehicle,
+                                       const std::string& path_name,
+                                       double target_speed,
+                                       bool isClosedPath)
     : ChDriver(vehicle),
       m_target_speed(target_speed),
       m_pathName(path_name),
@@ -43,7 +46,8 @@ ChClosedLoopDriver::ChClosedLoopDriver(ChVehicle& vehicle, const std::string& pa
 ChClosedLoopDriver::ChClosedLoopDriver(ChVehicle& vehicle,
                                        const std::string& speed_filename,
                                        const std::string& path_name,
-                                       double target_speed)
+                                       double target_speed,
+                                       bool isClosedPath)
     : ChDriver(vehicle),
       m_target_speed(target_speed),
       m_pathName(path_name),
@@ -108,9 +112,10 @@ void ChClosedLoopDriver::ExportPathPovray(const std::string& out_dir) {
 ChPathFollowerDriver::ChPathFollowerDriver(ChVehicle& vehicle,
                                            std::shared_ptr<ChBezierCurve> path,
                                            const std::string& path_name,
-                                           double target_speed)
-    : ChClosedLoopDriver(vehicle, path_name, target_speed) {
-    m_steeringPID = chrono_types::make_unique<ChPathSteeringController>(path);
+                                           double target_speed,
+                                           bool isClosedPath)
+    : ChClosedLoopDriver(vehicle, path_name, target_speed, isClosedPath) {
+    m_steeringPID = chrono_types::make_unique<ChPathSteeringController>(path, isClosedPath);
     Reset();
 }
 
@@ -119,9 +124,10 @@ ChPathFollowerDriver::ChPathFollowerDriver(ChVehicle& vehicle,
                                            const std::string& speed_filename,
                                            std::shared_ptr<ChBezierCurve> path,
                                            const std::string& path_name,
-                                           double target_speed)
-    : ChClosedLoopDriver(vehicle, speed_filename, path_name, target_speed) {
-    m_steeringPID = chrono_types::make_unique<ChPathSteeringController>(steering_filename, path);
+                                           double target_speed,
+                                           bool isClosedPath)
+    : ChClosedLoopDriver(vehicle, speed_filename, path_name, target_speed, isClosedPath) {
+    m_steeringPID = chrono_types::make_unique<ChPathSteeringController>(steering_filename, path, isClosedPath);
     Reset();
 }
 
@@ -135,9 +141,10 @@ ChPathFollowerDriverXT::ChPathFollowerDriverXT(ChVehicle& vehicle,
                                                std::shared_ptr<ChBezierCurve> path,
                                                const std::string& path_name,
                                                double target_speed,
+                                               bool isClosedPath,
                                                double maxWheelTurnAngle)
-    : ChClosedLoopDriver(vehicle, path_name, target_speed) {
-    m_steeringPID = chrono_types::make_unique<ChPathSteeringControllerXT>(path, maxWheelTurnAngle);
+    : ChClosedLoopDriver(vehicle, path_name, target_speed, isClosedPath) {
+    m_steeringPID = chrono_types::make_unique<ChPathSteeringControllerXT>(path, isClosedPath, maxWheelTurnAngle);
     Reset();
 }
 
@@ -147,9 +154,11 @@ ChPathFollowerDriverXT::ChPathFollowerDriverXT(ChVehicle& vehicle,
                                                std::shared_ptr<ChBezierCurve> path,
                                                const std::string& path_name,
                                                double target_speed,
+                                               bool isClosedPath,
                                                double maxWheelTurnAngle)
-    : ChClosedLoopDriver(vehicle, speed_filename, path_name, target_speed) {
-    m_steeringPID = chrono_types::make_unique<ChPathSteeringControllerXT>(steering_filename, path, maxWheelTurnAngle);
+    : ChClosedLoopDriver(vehicle, speed_filename, path_name, target_speed, isClosedPath) {
+    m_steeringPID =
+        chrono_types::make_unique<ChPathSteeringControllerXT>(steering_filename, path, isClosedPath, maxWheelTurnAngle);
     Reset();
 }
 
@@ -163,10 +172,12 @@ ChPathFollowerDriverSR::ChPathFollowerDriverSR(ChVehicle& vehicle,
                                                std::shared_ptr<ChBezierCurve> path,
                                                const std::string& path_name,
                                                double target_speed,
+                                               bool isClosedPath,
                                                double maxWheelTurnAngle,
                                                double axle_space)
-    : ChClosedLoopDriver(vehicle, path_name, target_speed) {
-    m_steeringPID = chrono_types::make_unique<ChPathSteeringControllerSR>(path, maxWheelTurnAngle, axle_space);
+    : ChClosedLoopDriver(vehicle, path_name, target_speed, isClosedPath) {
+    m_steeringPID =
+        chrono_types::make_unique<ChPathSteeringControllerSR>(path, isClosedPath, maxWheelTurnAngle, axle_space);
     Reset();
 }
 
@@ -176,11 +187,12 @@ ChPathFollowerDriverSR::ChPathFollowerDriverSR(ChVehicle& vehicle,
                                                std::shared_ptr<ChBezierCurve> path,
                                                const std::string& path_name,
                                                double target_speed,
+                                               bool isClosedPath,
                                                double maxWheelTurnAngle,
                                                double axle_space)
-    : ChClosedLoopDriver(vehicle, speed_filename, path_name, target_speed) {
-    m_steeringPID =
-        chrono_types::make_unique<ChPathSteeringControllerSR>(steering_filename, path, maxWheelTurnAngle, axle_space);
+    : ChClosedLoopDriver(vehicle, speed_filename, path_name, target_speed, isClosedPath) {
+    m_steeringPID = chrono_types::make_unique<ChPathSteeringControllerSR>(steering_filename, path, isClosedPath,
+                                                                          maxWheelTurnAngle, axle_space);
     Reset();
 }
 
@@ -194,9 +206,10 @@ ChPathFollowerDriverStanley::ChPathFollowerDriverStanley(ChVehicle& vehicle,
                                                          std::shared_ptr<ChBezierCurve> path,
                                                          const std::string& path_name,
                                                          double target_speed,
+                                                         bool isClosedPath,
                                                          double maxWheelTurnAngle)
-    : ChClosedLoopDriver(vehicle, path_name, target_speed) {
-    m_steeringPID = chrono_types::make_unique<ChPathSteeringControllerStanley>(path, maxWheelTurnAngle);
+    : ChClosedLoopDriver(vehicle, path_name, target_speed, isClosedPath) {
+    m_steeringPID = chrono_types::make_unique<ChPathSteeringControllerStanley>(path, isClosedPath, maxWheelTurnAngle);
     Reset();
 }
 
@@ -206,10 +219,11 @@ ChPathFollowerDriverStanley::ChPathFollowerDriverStanley(ChVehicle& vehicle,
                                                          std::shared_ptr<ChBezierCurve> path,
                                                          const std::string& path_name,
                                                          double target_speed,
+                                                         bool isClosedPath,
                                                          double maxWheelTurnAngle)
-    : ChClosedLoopDriver(vehicle, speed_filename, path_name, target_speed) {
-    m_steeringPID =
-        chrono_types::make_unique<ChPathSteeringControllerStanley>(steering_filename, path, maxWheelTurnAngle);
+    : ChClosedLoopDriver(vehicle, speed_filename, path_name, target_speed, isClosedPath) {
+    m_steeringPID = chrono_types::make_unique<ChPathSteeringControllerStanley>(steering_filename, path, isClosedPath,
+                                                                               maxWheelTurnAngle);
     Reset();
 }
 

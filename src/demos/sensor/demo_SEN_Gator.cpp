@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
 
     RigidTerrain terrain(gator.GetSystem());
 
-    ChContactMaterialData minfo;
+    MaterialInfo minfo;
     minfo.mu = 0.9f;
     minfo.cr = 0.01f;
     minfo.Y = 2e7f;
@@ -228,49 +228,6 @@ int main(int argc, char* argv[]) {
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
 
     terrain.Initialize();
-
-    auto ground_body = patch->GetGroundBody();
-
-    auto vis_mat1 = chrono_types::make_shared<ChVisualMaterial>();
-    vis_mat1->SetKdTexture(vehicle::GetDataFile("terrain/textures/grass.jpg"));
-    vis_mat1->SetWeightTexture(GetChronoDataFile("sensor/textures/weight1.png"));
-    vis_mat1->SetSpecularColor({.0f, .0f, .0f});
-    vis_mat1->SetRoughness(1.f);
-    vis_mat1->SetUseSpecularWorkflow(false);
-
-    auto vis_mat2 = chrono_types::make_shared<ChVisualMaterial>();
-    vis_mat2->SetKdTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"));
-    vis_mat2->SetWeightTexture(GetChronoDataFile("sensor/textures/weight2.png"));
-    vis_mat2->SetSpecularColor({.0f, .0f, .0f});
-    vis_mat2->SetRoughness(1.f);
-    vis_mat2->SetUseSpecularWorkflow(false);
-
-    auto visual_shape = ground_body->GetVisualModel()->GetShape(0);
-    visual_shape->SetMaterial(0,vis_mat1);
-    if(visual_shape->GetNumMaterials() >= 2){
-        visual_shape->SetMaterial(0,vis_mat2);
-    }
-    else{
-        visual_shape->AddMaterial(vis_mat2);
-    }
-
-    // auto visual_asset = std::dynamic_pointer_cast<ChVisualization>(ground_body->GetAssets()[0]);
-    // //first blended material
-    // auto vis_mat1 = chrono_types::make_shared<ChVisualMaterial>();
-    // vis_mat1->SetKdTexture(vehicle::GetDataFile("terrain/textures/grass.jpg"));
-    // vis_mat1->SetWeightTexture(GetChronoDataFile("sensor/textures/weight1.png"));
-    // vis_mat1->SetSpecularColor({.0f, .0f, .0f});
-    // vis_mat1->SetRoughness(1.f);
-    // vis_mat1->SetUseSpecularWorkflow(false);
-    // visual_asset->material_list.push_back(vis_mat1);
-
-    // auto vis_mat2 = chrono_types::make_shared<ChVisualMaterial>();
-    // vis_mat2->SetKdTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"));
-    // vis_mat2->SetWeightTexture(GetChronoDataFile("sensor/textures/weight2.png"));
-    // vis_mat2->SetSpecularColor({.0f, .0f, .0f});
-    // vis_mat2->SetRoughness(1.f);
-    // vis_mat2->SetUseSpecularWorkflow(false);
-    // visual_asset->material_list.push_back(vis_mat2);
 
     // -------------------------------------
     // Create the vehicle Irrlicht interface

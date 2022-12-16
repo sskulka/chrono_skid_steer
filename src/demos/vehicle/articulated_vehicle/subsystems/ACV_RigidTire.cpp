@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Rigid wheel subsystem for the articulated chassis vehicle
+// Generic wheel subsystem
 //
 // =============================================================================
 
@@ -30,7 +30,7 @@ const ChVector<> ACV_RigidTire::m_inertia(3.0, 6.0, 3.0);
 ACV_RigidTire::ACV_RigidTire(const std::string& name) : ChRigidTire(name) {}
 
 void ACV_RigidTire::CreateContactMaterial(ChContactMethod contact_method) {
-    ChContactMaterialData minfo;
+    MaterialInfo minfo;
     minfo.mu = 0.9f;
     minfo.cr = 0.1f;
     minfo.Y = 2e7f;

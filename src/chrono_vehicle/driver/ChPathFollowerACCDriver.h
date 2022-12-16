@@ -52,8 +52,9 @@ class CH_VEHICLE_API ChPathFollowerACCDriver : public ChDriver {
                             double target_speed,                  ///< constant target speed
                             double target_following_time,         ///< seconds of following time
                             double target_min_distance,           ///< min following distance
-                            double current_distance               ///< current distance to the vehicle in front
-    );
+                            double current_distance,              ///< current distance to the vehicle in front
+                            bool isClosedPath = false             ///< Treat the path as a closed loop
+                            );
 
     /// Construct using JSON specification files.
     /// The two files must contain specification for the path-follower steering controller
@@ -66,8 +67,9 @@ class CH_VEHICLE_API ChPathFollowerACCDriver : public ChDriver {
                             double target_speed,                   ///< constant target speed
                             double target_following_time,          ///< seconds of following time
                             double target_min_distance,            ///< min following distance
-                            double current_distance                ///< current distance to the vehicle in front
-    );
+                            double current_distance,               ///< current distance to the vehicle in front
+                            bool isClosedPath = false              ///< Treat the path as a closed loop
+                            );
 
     ~ChPathFollowerACCDriver() {}
 

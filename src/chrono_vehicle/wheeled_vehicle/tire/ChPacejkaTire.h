@@ -92,6 +92,9 @@ class CH_VEHICLE_API ChPacejkaTire : public ChForceElementTire {
     /// Get visualization tire width.
     virtual double GetVisualizationWidth() const { return 0.25; }
 
+    /// Report the tire force and moment.
+    virtual TerrainForce ReportTireForce(ChTerrain* terrain) const override;
+
     ///  Return the reactions for the pure slip EQs, in local or global coords
     TerrainForce GetTireForce_pureSlip(const bool local = true) const;
 

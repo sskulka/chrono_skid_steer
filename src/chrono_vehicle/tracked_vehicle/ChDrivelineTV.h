@@ -62,9 +62,6 @@ class CH_VEHICLE_API ChDrivelineTV : public ChDriveline {
                              double torque                           ///< [in] motor torque
     );
 
-    /// Disconnect driveline from driven sprockets.
-    virtual void Disconnect() = 0;
-
   protected:
     ChDrivelineTV(const std::string& name);
 

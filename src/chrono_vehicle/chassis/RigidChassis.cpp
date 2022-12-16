@@ -86,13 +86,13 @@ void RigidChassis::Create(const rapidjson::Document& d) {
         assert(d["Contact"].HasMember("Materials"));
         assert(d["Contact"].HasMember("Shapes"));
 
-        // Read contact material information
+        // Read contact material information (but defer creating and loading materials until CreateContactMaterials)
         assert(d["Contact"]["Materials"].IsArray());
         int num_mats = d["Contact"]["Materials"].Size();
 
         for (int i = 0; i < num_mats; i++) {
-            ChContactMaterialData minfo = ReadMaterialInfoJSON(d["Contact"]["Materials"][i]);
-            m_geometry.m_materials.push_back(minfo);
+            MaterialInfo minfo = ReadMaterialInfoJSON(d["Contact"]["Materials"][i]);
+            m_mat_info.push_back(minfo);
         }
 
         // Read contact shapes
@@ -167,6 +167,12 @@ void RigidChassis::Create(const rapidjson::Document& d) {
             }
             m_geometry.m_has_primitives = true;
         }
+    }
+}
+
+void RigidChassis::CreateContactMaterials(ChContactMethod contact_method) {
+    for (auto minfo : m_mat_info) {
+        m_geometry.m_materials.push_back(minfo.CreateMaterial(contact_method));
     }
 }
 
@@ -231,13 +237,13 @@ void RigidChassisRear::Create(const rapidjson::Document& d) {
         assert(d["Contact"].HasMember("Materials"));
         assert(d["Contact"].HasMember("Shapes"));
 
-        // Read contact material information
+        // Read contact material information (but defer creating and loading materials until CreateContactMaterials)
         assert(d["Contact"]["Materials"].IsArray());
         int num_mats = d["Contact"]["Materials"].Size();
 
         for (int i = 0; i < num_mats; i++) {
-            ChContactMaterialData minfo = ReadMaterialInfoJSON(d["Contact"]["Materials"][i]);
-            m_geometry.m_materials.push_back(minfo);
+            MaterialInfo minfo = ReadMaterialInfoJSON(d["Contact"]["Materials"][i]);
+            m_mat_info.push_back(minfo);
         }
 
         // Read contact shapes
@@ -312,6 +318,12 @@ void RigidChassisRear::Create(const rapidjson::Document& d) {
             }
             m_geometry.m_has_primitives = true;
         }
+    }
+}
+
+void RigidChassisRear::CreateContactMaterials(ChContactMethod contact_method) {
+    for (auto minfo : m_mat_info) {
+        m_geometry.m_materials.push_back(minfo.CreateMaterial(contact_method));
     }
 }
 

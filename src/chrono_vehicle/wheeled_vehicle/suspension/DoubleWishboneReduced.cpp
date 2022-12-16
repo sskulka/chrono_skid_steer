@@ -32,8 +32,7 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 DoubleWishboneReduced::DoubleWishboneReduced(const std::string& filename)
     : ChDoubleWishboneReduced(""), m_shockForceCB(NULL) {
-    Document d;
-    ReadFileJSON(filename, d);
+    Document d; ReadFileJSON(filename, d);
     if (d.IsNull())
         return;
 
@@ -47,6 +46,8 @@ DoubleWishboneReduced::DoubleWishboneReduced(const rapidjson::Document& d)
     Create(d);
 }
 
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 DoubleWishboneReduced::~DoubleWishboneReduced() {}
 
 // -----------------------------------------------------------------------------
@@ -56,16 +57,6 @@ DoubleWishboneReduced::~DoubleWishboneReduced() {}
 void DoubleWishboneReduced::Create(const rapidjson::Document& d) {
     // Invoke base class method.
     ChPart::Create(d);
-
-    if (d.HasMember("Camber Angle (deg)"))
-        m_camber_angle = d["Camber Angle (deg)"].GetDouble() * CH_C_DEG_TO_RAD;
-    else
-        m_camber_angle = 0;
-
-    if (d.HasMember("Toe Angle (deg)"))
-        m_toe_angle = d["Toe Angle (deg)"].GetDouble() * CH_C_DEG_TO_RAD;
-    else
-        m_toe_angle = 0;
 
     // Read Spindle data
     assert(d.HasMember("Spindle"));
@@ -116,12 +107,8 @@ void DoubleWishboneReduced::Create(const rapidjson::Document& d) {
     m_points[SHOCK_C] = ReadVectorJSON(d["Shock"]["Location Chassis"]);
     m_points[SHOCK_U] = ReadVectorJSON(d["Shock"]["Location Upright"]);
     m_springRestLength = d["Shock"]["Free Length"].GetDouble();
-    double preload = 0;
-    if (d["Shock"].HasMember("Preload"))
-        preload = d["Shock"]["Preload"].GetDouble();
-
-    m_shockForceCB = chrono_types::make_shared<LinearSpringDamperForce>(
-        d["Shock"]["Spring Coefficient"].GetDouble(), d["Shock"]["Damping Coefficient"].GetDouble(), preload);
+    m_shockForceCB = chrono_types::make_shared<LinearSpringDamperForce>(d["Shock"]["Spring Coefficient"].GetDouble(),
+                                                                        d["Shock"]["Damping Coefficient"].GetDouble());
 
     // Read axle inertia
     assert(d.HasMember("Axle"));

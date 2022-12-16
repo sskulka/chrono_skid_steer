@@ -74,7 +74,7 @@ class CH_VEHICLE_API FEATire : public ChFEATire {
 
     std::map<std::string, std::vector<std::shared_ptr<fea::ChNodeFEAbase>>> m_node_sets;
 
-    ChContactMaterialData m_mat_info;
+    MaterialInfo m_mat_info;
 };
 
 /// @} vehicle_wheeled_tire

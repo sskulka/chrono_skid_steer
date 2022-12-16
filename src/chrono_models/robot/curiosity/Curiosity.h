@@ -271,10 +271,7 @@ class CH_MODELS_API Curiosity {
     std::shared_ptr<CuriosityChassis> GetChassis() const { return m_chassis; }
 
     /// Get the specified rover wheel.
-    std::shared_ptr<CuriosityWheel> GetWheel(CuriosityWheelID id) const { return m_wheels[id]; }
-
-    /// Get all rover wheels.
-    std::array<std::shared_ptr<CuriosityWheel>, 6> GetWheels() const { return m_wheels; }
+    std::shared_ptr<CuriosityWheel> GetWheel(CuriosityWheelID id) const;
 
     /// Get the specified rover driveshaft.
     std::shared_ptr<ChShaft> GetDriveshaft(CuriosityWheelID id) const { return m_drive_shafts[id]; }

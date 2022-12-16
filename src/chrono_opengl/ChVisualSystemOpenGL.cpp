@@ -34,7 +34,6 @@ ChVisualSystemOpenGL::ChVisualSystemOpenGL()
       m_camera_scale(0.5f),
       m_camera_near(0.1f),
       m_camera_far(1000.0f),
-      particle_selector(nullptr),
       render_stats(true) {
     stats_renderer = chrono_types::make_shared<ChOpenGLStatsDefault>();
 }
@@ -104,7 +103,7 @@ void ChVisualSystemOpenGL::SetParticleRenderMode(float radius, RenderMode mode) 
     }
 }
 
-void ChVisualSystemOpenGL::AttachStatsRenderer(std::shared_ptr<ChOpenGLStats> renderer) {
+void ChVisualSystemOpenGL::SetStatsRenderer(std::shared_ptr<ChOpenGLStats> renderer) {
     stats_renderer = renderer;
     if (viewer)
         stats_renderer->Initialize(&viewer->render_camera);

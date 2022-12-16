@@ -48,12 +48,14 @@ namespace vehicle {
 ChHumanDriver::ChHumanDriver(ChVehicle& vehicle,
                              std::shared_ptr<ChBezierCurve> path,
                              const std::string& path_name,
+                             bool isClosedPath,
                              double road_width,
                              double max_wheel_turn_angle,
                              double axle_space)
     : ChDriver(vehicle),
       m_path(path),
       m_pathName(path_name),
+      m_isClosedPath(isClosedPath),
       m_road_width(road_width),
       m_Tp(0.5),
       m_Klat(0.1),
@@ -86,12 +88,14 @@ ChHumanDriver::ChHumanDriver(const std::string& filename,
                              ChVehicle& vehicle,
                              std::shared_ptr<ChBezierCurve> path,
                              const std::string& path_name,
+                             bool isClosedPath,
                              double road_width,
                              double max_wheel_turn_angle,
                              double axle_space)
     : ChDriver(vehicle),
       m_path(path),
       m_pathName(path_name),
+      m_isClosedPath(isClosedPath),
       m_road_width(road_width),
       m_Tp(0.5),
       m_Klat(0.1),
@@ -117,8 +121,7 @@ ChHumanDriver::ChHumanDriver(const std::string& filename,
       m_speed_min(1.0e99),
       m_left_acc(0),
       m_right_acc(0) {
-    Document d;
-    ReadFileJSON(filename, d);
+    Document d; ReadFileJSON(filename, d);
     if (d.IsNull())
         return;
 
@@ -241,14 +244,14 @@ void ChHumanDriver::Advance(double step) {  // distance in front of the vehicle.
     }
 
     // Calculate unit vector pointing to the yaw center
-    ChVector<> n_g = chassis_rot.GetYaxis();  // vehicle left direction (ISO frame)
-    ChWorldFrame::Project(n_g);               // projected onto horizontal plane (world frame)
-    n_g.Normalize();                          // normalized
+    ChVector<> n_g = chassis_rot.GetYaxis();                // vehicle left direction (ISO frame)
+    ChWorldFrame::Project(n_g);                             // projected onto horizontal plane (world frame)
+    n_g.Normalize();                                        // normalized
 
     // Calculate unit vector in the vehicle forward direction
-    ChVector<> t_g = chassis_rot.GetXaxis();  // vehicle forward direction (ISO frame)
-    ChWorldFrame::Project(t_g);               // projected onto horizontal plane (world frame)
-    t_g.Normalize();                          // normalized
+    ChVector<> t_g = chassis_rot.GetXaxis();                // vehicle forward direction (ISO frame)
+    ChWorldFrame::Project(t_g);                             // projected onto horizontal plane (world frame)
+    t_g.Normalize();                                        // normalized
 
     double R = 0;
     double ut = u > m_uthres ? u : m_uthres;
@@ -270,7 +273,7 @@ void ChHumanDriver::Advance(double step) {  // distance in front of the vehicle.
     if (t >= rt) {
         while (t > rt) {
             m_idx_curr++;
-            if (m_path->IsClosed()) {
+            if (m_isClosedPath) {
                 if (m_idx_curr == m_S_l.size()) {
                     m_idx_curr = 0;
                 }
@@ -378,7 +381,7 @@ void ChHumanDriver::Initialize() {
     m_Li.resize(np);
     m_Rj.resize(np);
 
-    if (m_path->IsClosed()) {
+    if (m_isClosedPath) {
         for (size_t i = 0; i < np; i++) {
             m_S_l[i] = m_path->getPoint(i);
         }
@@ -417,13 +420,15 @@ void ChHumanDriver::Initialize() {
 void ChHumanDriver::SetSpeedRange(double u0, double umax) {
     m_u0 = std::abs(u0);
     m_umax = std::abs(umax);
-    if (m_u0 > m_umax)
-        m_umax = m_u0;
+    if (m_u0 <= 5 || m_umax <= m_u0) {
+        m_u0 = 10;
+        m_umax = 30.0;
+    }
 }
 
 size_t ChHumanDriver::GetNextI() {
     // what is next possible index I?
-    if (m_path->IsClosed()) {
+    if (m_isClosedPath) {
         if (m_i_curr < m_Li.size() - 1) {
             // just the next one
             return m_i_curr + 1;
@@ -443,7 +448,7 @@ size_t ChHumanDriver::GetNextI() {
 }
 
 size_t ChHumanDriver::GetNextJ() {
-    if (m_path->IsClosed()) {
+    if (m_isClosedPath) {
         if (m_j_curr < m_Rj.size() - 1) {
             return m_j_curr + 1;
         } else

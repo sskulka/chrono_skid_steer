@@ -331,7 +331,7 @@ void AddFixedObstacles(ChSystem* system) {
     obstacle->AddVisualShape(shape);
 
     // Contact
-    ChContactMaterialData minfo;
+    MaterialInfo minfo;
     minfo.mu = 0.9f;
     minfo.cr = 0.01f;
     minfo.Y = 2e7f;

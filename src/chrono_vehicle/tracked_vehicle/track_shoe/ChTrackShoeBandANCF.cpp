@@ -44,9 +44,8 @@ namespace chrono {
 namespace vehicle {
 
 // -----------------------------------------------------------------------------
-
-ChTrackShoeBandANCF::ChTrackShoeBandANCF(const std::string& name, ElementType element_type, bool constrain_curvature)
-    : ChTrackShoeBand(name), m_element_type(element_type), m_constrain_curvature(constrain_curvature) {}
+ChTrackShoeBandANCF::ChTrackShoeBandANCF(const std::string& name, ElementType element_type)
+    : ChTrackShoeBand(name), m_element_type(element_type) {}
 
 ChTrackShoeBandANCF::~ChTrackShoeBandANCF() {
     if (!m_connections[0])
@@ -452,8 +451,6 @@ void ChTrackShoeBandANCF::Connect(std::shared_ptr<ChTrackShoe> next,
                 constraintD->Initialize(node, m_shoe);
                 system->Add(constraintD);
                 m_connections.push_back(constraintD);
-
-                node->SetFixedDD(m_constrain_curvature);
             }
 
             // Change the gradient on the boundary nodes that will connect to the second fixed body
@@ -473,8 +470,6 @@ void ChTrackShoeBandANCF::Connect(std::shared_ptr<ChTrackShoe> next,
                 constraintD->Initialize(node, next->GetShoeBody());
                 system->Add(constraintD);
                 m_connections.push_back(constraintD);
-
-                node->SetFixedDD(m_constrain_curvature);
             }
 
             break;

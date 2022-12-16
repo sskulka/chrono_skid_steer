@@ -73,11 +73,11 @@ class CH_VEHICLE_API ChChassis : public ChPart {
 
     /// Get the vehicle speed.
     /// Return the speed measured at the origin of the chassis reference frame.
-    double GetSpeed() const;
+    double GetSpeed() const { return m_body->GetFrame_REF_to_abs().GetPos_dt().Length(); }
 
     /// Get the speed of the chassis COM.
     /// Return the speed measured at the chassis center of mass.
-    double GetCOMSpeed() const;
+    double GetCOMSpeed() const { return m_body->GetPos_dt().Length(); }
 
     /// Get the global position of the specified point.
     /// The point is assumed to be given relative to the chassis reference frame.

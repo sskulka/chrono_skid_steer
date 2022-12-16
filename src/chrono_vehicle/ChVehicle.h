@@ -253,8 +253,7 @@ class CH_VEHICLE_API ChVehicle {
     ChTimer<> m_sim_timer;
     double m_RTF;
 
-    friend class ChVehicleCosimWheeledVehicleNode;
-    friend class ChVehicleCosimTrackedVehicleNode;
+    friend class ChVehicleCosimVehicleNode;
 };
 
 /// @} vehicle

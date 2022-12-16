@@ -63,7 +63,7 @@ ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
-
+    getchar();
     // Create the vehicle
     ACV_Vehicle vehicle(false, ChContactMethod::NSC);
     vehicle.Initialize(ChCoordsys<>(initLoc, initRot));

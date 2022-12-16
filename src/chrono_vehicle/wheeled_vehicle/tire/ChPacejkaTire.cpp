@@ -209,6 +209,10 @@ TerrainForce ChPacejkaTire::GetTireForce() const {
     return GetTireForce_combinedSlip(false);
 }
 
+TerrainForce ChPacejkaTire::ReportTireForce(ChTerrain* terrain) const {
+    return GetTireForce_combinedSlip(false);
+}
+
 TerrainForce ChPacejkaTire::GetTireForce_pureSlip(const bool local) const {
     if (local)
         return m_FM_pure;
@@ -254,6 +258,7 @@ void ChPacejkaTire::Synchronize(double time,
     }
 
     m_tireState = m_wheel->GetState();
+    CalculateKinematics(time, m_tireState, terrain);
 
     // Update the tire coordinate system.
     m_simTime = time;
@@ -417,12 +422,28 @@ void ChPacejkaTire::update_W_frame(const ChTerrain& terrain) {
     // Check contact with terrain, using a disc of radius R0.
     ChCoordsys<> contact_frame;
 
+    m_mu = terrain.GetCoefficientFriction(m_tireState.pos);
+
     double depth;
-    float mu;
-    m_in_contact = DiscTerrainCollision(m_collision_type, terrain, m_tireState.pos, m_tireState.rot.GetYaxis(),
-                                        m_R0, m_params->dimension.width, m_areaDep, contact_frame, depth, mu);
-    ChClampValue(mu, 0.1f, 1.0f);
-    m_mu = mu;
+    double dum_cam;
+    switch (m_collision_type) {
+        case CollisionType::SINGLE_POINT:
+            m_in_contact =
+                DiscTerrainCollision(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0, contact_frame, depth);
+            break;
+        case CollisionType::FOUR_POINTS:
+            m_in_contact = DiscTerrainCollision4pt(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0,
+                                                   m_params->dimension.width, contact_frame, depth, dum_cam);
+            break;
+        case CollisionType::ENVELOPE:
+            m_in_contact = DiscTerrainCollisionEnvelope(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0,
+                                                        m_areaDep, contact_frame, depth);
+            break;
+        default:
+            m_in_contact = false;
+            depth = 0;
+            break;
+    }
 
     // set the depth if there is contact with terrain
     m_depth = (m_in_contact) ? depth : 0;

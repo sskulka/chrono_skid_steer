@@ -28,7 +28,7 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // Construct a default simple track driveline.
 // -----------------------------------------------------------------------------
-ChSimpleTrackDriveline::ChSimpleTrackDriveline(const std::string& name) : ChDrivelineTV(name), m_connected(true) {}
+ChSimpleTrackDriveline::ChSimpleTrackDriveline(const std::string& name) : ChDrivelineTV(name) {}
 
 // -----------------------------------------------------------------------------
 // Initialize the driveline subsystem.
@@ -85,9 +85,6 @@ static void differentialSplit(double torque,
 
 // -----------------------------------------------------------------------------
 void ChSimpleTrackDriveline::Synchronize(double time, const DriverInputs& driver_inputs, double torque) {
-    if (!m_connected)
-        return;
-
     // Enforce driveshaft speed 
     double driveshaft_speed = 0.5 * (m_shaft_left->GetPos_dt() + m_shaft_right->GetPos_dt());
     m_driveshaft->SetPos_dt(driveshaft_speed);
@@ -117,9 +114,6 @@ void ChSimpleTrackDriveline::Synchronize(double time, const DriverInputs& driver
 
 // -----------------------------------------------------------------------------
 double ChSimpleTrackDriveline::GetSprocketTorque(VehicleSide side) const {
-    if (!m_connected)
-        return 0;
-
     switch (side) {
         case LEFT:
             return -m_shaft_left->GetAppliedTorque();
@@ -140,11 +134,6 @@ double ChSimpleTrackDriveline::GetSprocketSpeed(VehicleSide side) const {
     }
 
     return 0;
-}
-
-// -----------------------------------------------------------------------------
-void ChSimpleTrackDriveline::Disconnect() {
-    m_connected = false;
 }
 
 }  // end namespace vehicle

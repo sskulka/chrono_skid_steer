@@ -41,10 +41,6 @@ const double LMTV_ChassisConnector::m_torsion_stiffness = 7085;
 
 LMTV_ChassisRear::LMTV_ChassisRear(const std::string& name, CollisionType chassis_collision_type)
     : ChRigidChassisRear(name) {
-    // In this model, we use a single material with default properties.
-    ChContactMaterialData minfo;
-    m_geometry.m_materials.push_back(minfo);
-
     m_body_inertia(0, 0) = m_body_inertiaXX.x();
     m_body_inertia(1, 1) = m_body_inertiaXX.y();
     m_body_inertia(2, 2) = m_body_inertiaXX.z();
@@ -94,6 +90,12 @@ LMTV_ChassisRear::LMTV_ChassisRear(const std::string& name, CollisionType chassi
         default:
             break;
     }
+}
+
+void LMTV_ChassisRear::CreateContactMaterials(ChContactMethod contact_method) {
+    // This model uses a single material with default properties.
+    MaterialInfo minfo;
+    m_geometry.m_materials.push_back(minfo.CreateMaterial(contact_method));
 }
 
 // -----------------------------------------------------------------------------

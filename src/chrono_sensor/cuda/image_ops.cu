@@ -44,7 +44,6 @@ __global__ void image_gauss_kernel_vert(unsigned char* buf, int w, int h, int c,
             sum += dweights[i + f_width] * ((float)buf[index_in]);
             // sum += ((float)buf[index_in]);
         }
-        sum = fminf(255.f,fmaxf(0.f,sum));
         buf[index] = (unsigned char)(sum);
     }
 }
@@ -64,7 +63,6 @@ __global__ void image_gauss_kernel_horiz(unsigned char* buf, int w, int h, int c
                 index_in = channel + (2 * w - (col + i + 1)) * c + row * w * c;
             sum += dweights[i + f_width] * ((float)buf[index_in]);
         }
-        sum = fminf(255.f,fmaxf(0.f,sum));
         buf[index] = (unsigned char)(sum);
     }
 }
@@ -131,7 +129,7 @@ __global__ void image_alias_float_kernel(float* bufIn, float* bufOut, int w_out,
         int idx_out = (out_index / pix_size) % w_out;
         int idy_out = (out_index / pix_size) / w_out;
 
-        float mean = 0.f;
+        float mean = 0.0;
 
         for (int i = 0; i < factor; i++) {
             for (int j = 0; j < factor; j++) {

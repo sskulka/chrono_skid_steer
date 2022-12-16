@@ -61,11 +61,11 @@ class CH_VEHICLE_API TrackShoeSinglePin : public ChTrackShoeSinglePin {
     /// Return the location of the guiding pin center, expressed in the shoe reference frame.
     virtual ChVector<> GetLateralContactPoint() const override { return m_pin_center; }
 
-    /// Return contact geometry and material for interaction with terrain.
-    virtual ChVehicleGeometry GetGroundContactGeometry() const override { return m_ground_geometry; }
-
   private:
     virtual void Create(const rapidjson::Document& d) override;
+
+    /// Create all contact materials.
+    void CreateContactMaterials(ChContactMethod contact_method) override;
 
     double m_shoe_height;
     double m_shoe_pitch;
@@ -78,7 +78,8 @@ class CH_VEHICLE_API TrackShoeSinglePin : public ChTrackShoeSinglePin {
 
     ChVector<> m_pin_center;
 
-    ChVehicleGeometry m_ground_geometry;
+    std::vector<MaterialInfo> m_shoe_mat_info;
+    MaterialInfo m_cyl_mat_info;
 };
 
 /// @} vehicle_tracked_shoe

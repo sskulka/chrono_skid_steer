@@ -19,7 +19,6 @@
 
 #include <vector>
 
-#include "chrono/fea/ChElementANCF.h"
 #include "chrono/fea/ChElementShell.h"
 #include "chrono/fea/ChMaterialShellANCF.h"
 #include "chrono/fea/ChNodeFEAxyzD.h"
@@ -44,10 +43,7 @@ namespace fea {
 ///   |     |     |
 /// A o-----+-----o B
 /// </pre>
-class ChApi ChElementShellANCF_3423 : public ChElementANCF,
-                                      public ChElementShell,
-                                      public ChLoadableUV,
-                                      public ChLoadableUVW {
+class ChApi ChElementShellANCF_3423 : public ChElementShell, public ChLoadableUV, public ChLoadableUVW {
   public:
     static const int NSF = 8;  ///< number of shape functions
 
@@ -106,14 +102,8 @@ class ChApi ChElementShellANCF_3423 : public ChElementANCF,
     /// Get the number of coordinates in the field used by the referenced nodes.
     virtual int GetNdofs() override { return 4 * 6; }
 
-    /// Get the number of active coordinates in the field used by the referenced nodes.
-    virtual int GetNdofs_active() override { return m_element_dof; }
-
     /// Get the number of coordinates from the n-th node used by this element.
-    virtual int GetNodeNdofs(int n) override { return m_nodes[n]->GetNdofX(); }
-
-    /// Get the number of active coordinates from the n-th node used by this element.
-    virtual int GetNodeNdofs_active(int n) override { return m_nodes[n]->GetNdofX_active(); }
+    virtual int GetNodeNdofs(int n) override { return 6; }
 
     /// Specify the nodes of this element.
     void SetNodes(std::shared_ptr<ChNodeFEAxyzD> nodeA,
@@ -318,13 +308,13 @@ class ChApi ChElementShellANCF_3423 : public ChElementANCF,
     virtual int GetSubBlocks() override { return 4; }
 
     /// Get the offset of the specified sub-block of DOFs in global vector.
-    virtual unsigned int GetSubBlockOffset(int nblock) override { return m_nodes[nblock]->NodeGetOffsetW(); }
+    virtual unsigned int GetSubBlockOffset(int nblock) override { return m_nodes[nblock]->NodeGetOffset_w(); }
 
     /// Get the size of the specified sub-block of DOFs in global vector.
     virtual unsigned int GetSubBlockSize(int nblock) override { return 6; }
 
     /// Check if the specified sub-block of DOFs is active.
-    virtual bool IsSubBlockActive(int nblock) const override { return !m_nodes[nblock]->IsFixed(); }
+    virtual bool IsSubBlockActive(int nblock) const override { return !m_nodes[nblock]->GetFixed(); }
 
     virtual void EvaluateSectionVelNorm(double U, double V, ChVector<>& Result) override;
 

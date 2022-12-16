@@ -291,10 +291,8 @@ void ChIrrNodeShape::UpdateTriangleMesh_mat(std::shared_ptr<ChTriangleMeshShape>
             }
 
             if (uv_indices.size() == ntriangles_all) {
-                for (int iv = 0; iv < 3; iv++) {
-                    auto uv_index = uv_indices[itri][iv];
-                    uv[iv] = uv_index == -1 ? 0 : uvs[uv_index];
-                }
+                for (int iv = 0; iv < 3; iv++)
+                    uv[iv] = uvs[uv_indices[itri][iv]];
             }
 
             u32 v_id[3];

@@ -85,7 +85,7 @@ class CuriosityDBPDriver : public CuriosityDriver {
 
 // -----------------------------------------------------------------------------
 
-ChVehicleCosimCuriosityNode::ChVehicleCosimCuriosityNode() : ChVehicleCosimWheeledMBSNode() {
+ChVehicleCosimCuriosityNode::ChVehicleCosimCuriosityNode() : ChVehicleCosimMBSNode() {
     m_curiosity = chrono_types::make_shared<Curiosity>(m_system);
 }
 

@@ -17,6 +17,10 @@
 #ifndef CHFILTERVISUALIZEPOINTCLOUD_H
 #define CHFILTERVISUALIZEPOINTCLOUD_H
 
+// #include "glad.h"
+// #include <GL/glew.h>
+// #include <GLFW/glfw3.h>
+
 #include "chrono_sensor/filters/ChFilterVisualize.h"
 
 namespace chrono {

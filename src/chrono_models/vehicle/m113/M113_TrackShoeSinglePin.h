@@ -64,10 +64,10 @@ class CH_MODELS_API M113_TrackShoeSinglePin : public ChTrackShoeSinglePin {
     /// Return the location of the guiding pin center, expressed in the shoe reference frame.
     virtual ChVector<> GetLateralContactPoint() const override { return m_pin_center; }
 
-    /// Return contact geometry and material for interaction with terrain.
-    virtual ChVehicleGeometry GetGroundContactGeometry() const override { return m_ground_geometry; }
-
   private:
+    /// Create the contact materials.
+    void CreateContactMaterials(ChContactMethod contact_method) override;
+
     static const double m_shoe_height;
     static const double m_shoe_pitch;
     static const double m_shoe_mass;
@@ -78,8 +78,6 @@ class CH_MODELS_API M113_TrackShoeSinglePin : public ChTrackShoeSinglePin {
     static const double m_rear_cyl_loc;
 
     static const ChVector<> m_pin_center;
-
-    ChVehicleGeometry m_ground_geometry;
 };
 
 /// @} vehicle_models_m113

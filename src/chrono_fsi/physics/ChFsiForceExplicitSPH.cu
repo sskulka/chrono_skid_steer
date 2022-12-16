@@ -11,10 +11,8 @@
 // =============================================================================
 // Author: Arman Pazouki, Wei Hu
 // =============================================================================
-
 #include <thrust/extrema.h>
 #include <thrust/sort.h>
-
 #include "chrono_fsi/physics/ChFsiForceExplicitSPH.cuh"
 #include "chrono_fsi/physics/ChSphGeneral.cuh"
 
@@ -882,7 +880,7 @@ __device__ inline Real4 DifVelocityRho_ElasticSPH(Real W_ini_inv,
 
     // Artifical pressure to handle tensile instability issue.
     // A complete artifical stress should be implemented in the future.
-    /*if (paramsD.Coh_coeff > 1e-5) {
+    if (paramsD.Coh_coeff > 1e-5) {
         Real Pa = -1.0 / 3.0 * (tauXxYyZz_A.x + tauXxYyZz_A.y + tauXxYyZz_A.z);
         if (Pa < 0.0) {
             Real Pb = -1.0 / 3.0 * (tauXxYyZz_B.x + tauXxYyZz_B.y + tauXxYyZz_B.z);
@@ -895,7 +893,7 @@ __device__ inline Real4 DifVelocityRho_ElasticSPH(Real W_ini_inv,
             derivVy += small_F * gradW.y;
             derivVz += small_F * gradW.z;
         }
-    }*/
+    }
 
     // TOTO: Damping force
     // if (1 == 0) {
@@ -1055,8 +1053,11 @@ __global__ void Navier_Stokes(uint* indexOfIndex,
     Real4 velyLap = mR4(0.0);
     Real4 velzLap = mR4(0.0);
 
+    Real radii = paramsD.INITSPACE * 1.241;
+    Real invRadii = 1.0 / 1.241 * paramsD.INV_INIT;
     Real vA = length(velMasA);
     Real vAdT = vA * paramsD.dT;
+    Real bs_vAdT = paramsD.beta_shifting * vAdT;
 
     // get address in grid
     int3 gridPos = calcGridPos(posRadA);
@@ -1083,6 +1084,7 @@ __global__ void Navier_Stokes(uint* indexOfIndex,
                         if (rhoPresMuA.w > -0.5 && rhoPresMuB.w > -0.5)   
                             continue;
                         Real d = length(dist3);
+                        Real invd = 1.0 / d;
                         // modifyPressure(rhoPresMuB, dist3Alpha);
                         // if (!(isfinite(rhoPresMuB.x) && isfinite(rhoPresMuB.y) && isfinite(rhoPresMuB.z))) {
                         //     printf("Error! particle rhoPresMuB is NAN: thrown from modifyPressure !\n");
@@ -1714,7 +1716,7 @@ void ChFsiForceExplicitSPH::CollideWrapper() {
     // This is faster than using thrust::sort_by_key()
     CopySortedToOriginal_D<<<numBlocks, numThreads>>>(
         mR4CAST(sortedDerivVelRho), mR3CAST(sortedDerivTauXxYyZz), mR3CAST(sortedDerivTauXyXzYz),
-        mR4CAST(fsiGeneralData->derivVelRhoD), mR3CAST(fsiGeneralData->derivTauXxYyZzD),
+        mR4CAST(fsiGeneralData->derivVelRhoD_old), mR3CAST(fsiGeneralData->derivTauXxYyZzD),
         mR3CAST(fsiGeneralData->derivTauXyXzYzD), U1CAST(markersProximityD->gridMarkerIndexD),
         U1CAST(fsiGeneralData->activityIdentifierD), U1CAST(markersProximityD->mapOriginalToSorted),
         U1CAST(fsiGeneralData->freeSurfaceIdD), U1CAST(sortedFreeSurfaceId));
@@ -1805,9 +1807,9 @@ void ChFsiForceExplicitSPH::AddGravityToFluid() {
     thrust::device_vector<Real4> bodyForceD(numObjectsH->numAllMarkers);
     thrust::fill(bodyForceD.begin(), bodyForceD.end(), mR4(totalFluidBodyForce3));
     thrust::transform(
-        fsiGeneralData->derivVelRhoD.begin() + fsiGeneralData->referenceArray[0].x,
-        fsiGeneralData->derivVelRhoD.begin() + fsiGeneralData->referenceArray[0].y, bodyForceD.begin(),
-        fsiGeneralData->derivVelRhoD.begin() + fsiGeneralData->referenceArray[0].x, thrust::plus<Real4>());
+        fsiGeneralData->derivVelRhoD_old.begin() + fsiGeneralData->referenceArray[0].x,
+        fsiGeneralData->derivVelRhoD_old.begin() + fsiGeneralData->referenceArray[0].y, bodyForceD.begin(),
+        fsiGeneralData->derivVelRhoD_old.begin() + fsiGeneralData->referenceArray[0].x, thrust::plus<Real4>());
     bodyForceD.clear();
 }
 

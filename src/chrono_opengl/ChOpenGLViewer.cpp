@@ -636,27 +636,22 @@ void ChOpenGLViewer::RenderParticles() {
     else
         particles.AttachShader(&sphere_shader);
 
-    num_particles = 0;
+    size_t start = 0;
     for (auto s : m_vis->GetSystems()) {
         for (auto& item : s->Get_otherphysicslist()) {
             if (auto pcloud = std::dynamic_pointer_cast<ChParticleCloud>(item)) {
                 if (!pcloud->GetVisualModel())
                     continue;
 
-                size_t n = 0;
                 for (int i = 0; i < pcloud->GetNparticles(); i++) {
                     const auto& pos = pcloud->GetVisualModelFrame(i).GetPos();
-                    if (!m_vis->particle_selector || m_vis->particle_selector->Render(pos)) {
-                        particle_data[num_particles + n++] = glm::vec3(pos.x(), pos.y(), pos.z());
-                    }
+                    particle_data[start + i] = glm::vec3(pos.x(), pos.y(), pos.z());
                 }
 
-                num_particles += n;
+                start += pcloud->GetNparticles();
             }
         }
     }
-
-    particle_data.resize(num_particles);
 
     particles.SetPointSize(particle_radius);
 

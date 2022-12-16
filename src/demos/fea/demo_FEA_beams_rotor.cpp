@@ -359,11 +359,10 @@ int main(int argc, char* argv[]) {
     mycallback->blade_nodes = nodes;
     mycallback->blade_rad_s = rad_s;
 
-    ChStaticNonLinearRheonomicAnalysis analysis;
-    analysis.SetMaxIterations(25);
-    analysis.SetVerbose(true);
-    analysis.SetCallbackIterationBegin(mycallback);
-    
+    auto myanalysis = chrono_types::make_shared<ChStaticNonLinearRheonomicAnalysis>(sys);
+    myanalysis->SetMaxIterations(25);
+    myanalysis->SetVerbose(true);
+    myanalysis->SetCallbackIterationBegin(mycallback);
     // As an alternative to providing the callback, a much simpler option is to let the static solver
     // compute the speed and acceleration as inferred by the rheonomic joints, instead of the
     // previous line just use:
@@ -372,7 +371,7 @@ int main(int argc, char* argv[]) {
     // undeformed state.
 
     // EXECUTE NONLINEAR STATIC ANALYSIS HERE:
-    sys.DoStaticAnalysis(analysis);
+    sys.DoStaticAnalysis(myanalysis);
 
     // Some plots after the static analysis:
     {

@@ -38,9 +38,6 @@ class CH_VEHICLE_API SAEToeBarLeafspringAxle : public ChSAEToeBarLeafspringAxle 
     ~SAEToeBarLeafspringAxle();
 
   protected:
-    virtual double getCamberAngle() const override { return m_camber_angle; }
-    virtual double getToeAngle() const override { return m_toe_angle; }
-
     /// Return the mass of the knuckle body.
     virtual double getKnuckleMass() const override { return m_knuckleMass; }
 
@@ -145,9 +142,6 @@ class CH_VEHICLE_API SAEToeBarLeafspringAxle : public ChSAEToeBarLeafspringAxle 
 
     ////double m_damperDegressivityCompression;
     ////double m_damperDegressivityExpansion;
-
-    double m_camber_angle;
-    double m_toe_angle;
 
     double m_spindleMass;
     double m_axleTubeMass;

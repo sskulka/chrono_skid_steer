@@ -55,6 +55,8 @@ ChSystem::ChSystem()
       ndoc_w_D(0),
       ch_time(0),
       step(0.04),
+      step_min(0.002),
+      step_max(0.04),
       tol_force(-1),
       maxiter(6),
       use_sleeping(false),
@@ -100,6 +102,8 @@ ChSystem::ChSystem(const ChSystem& other) {
     nsysvars_w = other.nsysvars_w;
     ch_time = other.ch_time;
     step = other.step;
+    step_min = other.step_min;
+    step_max = other.step_max;
     stepcount = other.stepcount;
     solvecount = other.solvecount;
     setupcount = other.setupcount;
@@ -1584,10 +1588,10 @@ bool ChSystem::DoStaticLinear() {
     // Prepare lists of variables and constraints.
     DescriptorPrepareInject(*descriptor);
 
+    ChStaticLinearAnalysis manalysis(*this);
+
     // Perform analysis
-    ChStaticLinearAnalysis analysis;
-    analysis.SetIntegrable(this);
-    analysis.StaticAnalysis();
+    manalysis.StaticAnalysis();
 
     SetSolverMaxIterations(old_maxsteps);
 
@@ -1641,12 +1645,12 @@ bool ChSystem::DoStaticNonlinear(int nsteps, bool verbose) {
     // Prepare lists of variables and constraints.
     DescriptorPrepareInject(*descriptor);
 
+    ChStaticNonLinearAnalysis manalysis(*this);
+    manalysis.SetMaxIterations(nsteps);
+    manalysis.SetVerbose(verbose);
+
     // Perform analysis
-    ChStaticNonLinearAnalysis analysis;
-    analysis.SetIntegrable(this);
-    analysis.SetMaxIterations(nsteps);
-    analysis.SetVerbose(verbose);
-    analysis.StaticAnalysis();
+    manalysis.StaticAnalysis();
 
     SetSolverMaxIterations(old_maxsteps);
 
@@ -1657,7 +1661,7 @@ bool ChSystem::DoStaticNonlinear(int nsteps, bool verbose) {
     return true;
 }
 
-bool ChSystem::DoStaticAnalysis(ChStaticAnalysis& analysis) {
+bool ChSystem::DoStaticAnalysis(std::shared_ptr<ChStaticAnalysis> analysis) {
     if (!is_initialized)
         SetupInitial();
 
@@ -1670,8 +1674,8 @@ bool ChSystem::DoStaticAnalysis(ChStaticAnalysis& analysis) {
     Update();
 
     DescriptorPrepareInject(*descriptor);
-    analysis.SetIntegrable(this);
-    analysis.StaticAnalysis();
+
+    analysis->StaticAnalysis();
 
     // Update any attached visualization system
     if (visual_system)
@@ -1680,7 +1684,7 @@ bool ChSystem::DoStaticAnalysis(ChStaticAnalysis& analysis) {
     return true;
 }
 
-bool ChSystem::DoStaticNonlinearRheonomic(int nsteps, bool verbose, std::shared_ptr<ChStaticNonLinearRheonomicAnalysis::IterationCallback> callback) {
+bool ChSystem::DoStaticNonlinearRheonomic(int nsteps, bool verbose, std::shared_ptr<ChStaticNonLinearRheonomicAnalysis::IterationCallback> mcallback) {
     if (!is_initialized)
         SetupInitial();
 
@@ -1698,13 +1702,13 @@ bool ChSystem::DoStaticNonlinearRheonomic(int nsteps, bool verbose, std::shared_
     // Prepare lists of variables and constraints.
     DescriptorPrepareInject(*descriptor);
 
+    ChStaticNonLinearRheonomicAnalysis manalysis(*this);
+    manalysis.SetMaxIterations(nsteps);
+    manalysis.SetVerbose(verbose);
+    manalysis.SetCallbackIterationBegin(mcallback);
+
     // Perform analysis
-    ChStaticNonLinearRheonomicAnalysis analysis;
-    analysis.SetIntegrable(this);
-    analysis.SetMaxIterations(nsteps);
-    analysis.SetVerbose(verbose);
-    analysis.SetCallbackIterationBegin(callback);
-    analysis.StaticAnalysis();
+    manalysis.StaticAnalysis();
 
     SetSolverMaxIterations(old_maxsteps);
 
@@ -2015,6 +2019,8 @@ void ChSystem::ArchiveOUT(ChArchiveOut& marchive) {
     marchive << CHNVP(G_acc);
     marchive << CHNVP(ch_time);
     marchive << CHNVP(step);
+    marchive << CHNVP(step_min);
+    marchive << CHNVP(step_max);
     marchive << CHNVP(stepcount);
     marchive << CHNVP(write_matrix);
 
@@ -2050,6 +2056,8 @@ void ChSystem::ArchiveIN(ChArchiveIn& marchive) {
     marchive >> CHNVP(G_acc);
     marchive >> CHNVP(ch_time);
     marchive >> CHNVP(step);
+    marchive >> CHNVP(step_min);
+    marchive >> CHNVP(step_max);
     marchive >> CHNVP(stepcount);
     marchive >> CHNVP(write_matrix);
 

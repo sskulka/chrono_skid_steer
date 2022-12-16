@@ -25,7 +25,6 @@ set(CH_INCLUDES ${CH_INCLUDES} "${CMAKE_CURRENT_SOURCE_DIR}/../chrono_thirdparty
 # Make CH_INCLUDES visible in parent scope
 set(CH_INCLUDES "${CH_INCLUDES}" PARENT_SCOPE)
 
-message(STATUS "Chrono includes: ${CH_INCLUDES}")
 include_directories(${CH_INCLUDES})
 
 #-----------------------------------------------------------------------------
@@ -500,7 +499,6 @@ set(ChronoEngine_fea_elements_HEADERS
     fea/ChElementBase.h
     fea/ChElementGeneric.h
     fea/ChElementCorotational.h
-    fea/ChElementANCF.h
     fea/ChElementSpring.h
     fea/ChElementBar.h
     fea/ChElementBeam.h
@@ -685,6 +683,7 @@ if (THRUST_FOUND)
         multicore_math/utility.h
         multicore_math/vec3.cpp
         )
+
     source_group(multicore_math FILES ${ChronoEngine_MulticoreMath_SOURCES})
 elseif()
     set(ChronoEngine_MulticoreMath_SOURCES "")
@@ -730,8 +729,6 @@ if (THRUST_FOUND)
        collision/ChCollisionModelChrono.h
        collision/ChCollisionSystemChrono.h
        )
-
-   message(STATUS "Adding internal multicore collision detection library.")       
 endif()
 
 source_group(collision FILES
@@ -907,7 +904,6 @@ set(ChronoEngine_solver_SOURCES
     solver/ChSystemDescriptor.cpp
     solver/ChSolver.cpp
     solver/ChDirectSolverLS.cpp
-    solver/ChDirectSolverLScomplex.cpp
     solver/ChIterativeSolver.cpp
     solver/ChIterativeSolverLS.cpp
     solver/ChIterativeSolverVI.cpp
@@ -929,7 +925,6 @@ set(ChronoEngine_solver_HEADERS
     solver/ChSolverLS.h
     solver/ChSolverVI.h
     solver/ChDirectSolverLS.h
-    solver/ChDirectSolverLScomplex.h
     solver/ChIterativeSolver.h
     solver/ChIterativeSolverLS.h
     solver/ChIterativeSolverVI.h
@@ -1268,7 +1263,6 @@ set(ChronoEngine_utils_SOURCES
     utils/ChParserAdams.cpp
     utils/ChAdamsTokenizer.yy.cpp
     utils/ChConvexHull.cpp
-    utils/ChSocket.cpp
     )
 
 set(ChronoEngine_utils_HEADERS
@@ -1286,12 +1280,10 @@ set(ChronoEngine_utils_HEADERS
     utils/ChParserOpenSim.h
     utils/ChParserAdams.h
     utils/ChConvexHull.h
-    utils/ChSocket.h
 )
 
 if(BUILD_BENCHMARKING)
     set(ChronoEngine_utils_HEADERS ${ChronoEngine_utils_HEADERS} utils/ChBenchmark.h)
-    message(STATUS "Adding Chrono utilities for benchmarking.")
 endif()
 
 source_group(utils FILES
@@ -1362,25 +1354,6 @@ set(ChronoEngine_FILES
     ${ChronoEngine_tiny_obj_FILES}
     )
 
-# Add the 'socket' library to the linking, depending on platform.
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-	IF ("${CH_COMPILER}" STREQUAL "COMPILER_MSVC")
-		SET (CH_SOCKET_LIB "Ws2_32.lib")
-	ELSEIF ("${CH_COMPILER}" STREQUAL "COMPILER_MSVC_X64")
-		SET (CH_SOCKET_LIB "Ws2_32.lib") # btw not Ws2_64.lib that does not exist
-	ELSEIF ("${CH_COMPILER}" STREQUAL "COMPILER_GCC")
-		SET (CH_SOCKET_LIB "")  # not needed?
-	ELSEIF ("${CH_COMPILER}" STREQUAL "COMPILER_GCC_X64")
-		SET (CH_SOCKET_LIB "")  # not needed?
-	ENDIF()
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-	SET (CH_SOCKET_LIB "")		  # not needed?
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	SET (CH_SOCKET_LIB "")		  # not needed?
-ENDIF()
-			
-SET(CH_SOCKET_LIB ${CH_SOCKET_LIB} PARENT_SCOPE)
-
 # Disable all warnings from external code
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set_source_files_properties(${ChronoEngine_collision_bullet_SOURCES} PROPERTIES COMPILE_OPTIONS "-Wno-everything")
@@ -1405,7 +1378,7 @@ endif()
 # Add the ChronoEngine library to the project
 add_library(ChronoEngine SHARED ${ChronoEngine_FILES})
 
-target_link_libraries(ChronoEngine ${OPENMP_LIBRARIES} ${CH_SOCKET_LIB})
+target_link_libraries(ChronoEngine ${OPENMP_LIBRARIES})
 if (UNIX)
   target_link_libraries(ChronoEngine pthread)
 endif()

@@ -443,10 +443,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     endif()
 endif()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(CH_LINKERFLAG_EXE "${CH_LINKERFLAG_EXE} -Wl,-no_compact_unwind")
-    set(CH_LINKERFLAG_SHARED "${CH_LINKERFLAG_SHARED} -Wl,-no_compact_unwind")
-endif()
 
 # Compiler warning level and disbaled warnings
 
@@ -479,7 +475,7 @@ elseif(MSVC)
     add_compile_options(/wd26812)  # use of unscoped enums
 else()
     message(STATUS "Warning level set to -Wall")
-    add_compile_options(-Wint-in-bool-context)
+    add_compile_options(-Wall)
     add_compile_options(-Wno-sign-compare)
     add_compile_options(-Wno-reorder)
     add_compile_options(-Wno-unused-function)
@@ -575,6 +571,10 @@ include_directories(${THRUST_INCLUDE_DIR})
 # Build submodules
 #------------------------------------------------------------
 
+message(STATUS "")
+message(STATUS "==== Chrono Modules ====")
+message(STATUS "")
+
 if(BUILD_TESTING)
   message(STATUS "Build Google test framework")
 
@@ -617,17 +617,11 @@ if(BUILD_BENCHMARKING)
     mark_as_advanced(FORCE BENCHMARK_BUILD_32_BITS)
     mark_as_advanced(FORCE BENCHMARK_DOWNLOAD_DEPENDENCIES)
     mark_as_advanced(FORCE BENCHMARK_ENABLE_ASSEMBLY_TESTS)
-    mark_as_advanced(FORCE BENCHMARK_ENABLE_DOXYGEN)
     mark_as_advanced(FORCE BENCHMARK_ENABLE_EXCEPTIONS)
     mark_as_advanced(FORCE BENCHMARK_ENABLE_GTEST_TESTS)
     mark_as_advanced(FORCE BENCHMARK_ENABLE_INSTALL)
-    mark_as_advanced(FORCE BENCHMARK_ENABLE_LIBPFM)    
     mark_as_advanced(FORCE BENCHMARK_ENABLE_LTO)
     mark_as_advanced(FORCE BENCHMARK_ENABLE_TESTING)
-    mark_as_advanced(FORCE BENCHMARK_ENABLE_WERROR)
-    mark_as_advanced(FORCE BENCHMARK_FORCE_WERROR)
-    mark_as_advanced(FORCE BENCHMARK_INSTALL_DOCS)   
-    mark_as_advanced(FORCE BENCHMARK_USE_BUNDLED_GTEST)
     mark_as_advanced(FORCE BENCHMARK_USE_LIBCXX)
     mark_as_advanced(FORCE LIBRT)
 
