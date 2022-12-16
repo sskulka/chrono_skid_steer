@@ -1,0 +1,201 @@
+// =============================================================================
+// PROJECT CHRONO - http://projectchrono.org
+//
+// Copyright (c) 2014 projectchrono.org
+// All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be found
+// in the LICENSE file at the top level of the distribution and at
+// http://projectchrono.org/license-chrono.txt.
+//
+// =============================================================================
+// Authors: Radu Serban
+// =============================================================================
+//
+// Main function for an articulated vehicle (steering applied to the joint
+// connecting the front and rear sides).
+//
+// Driver inputs are obtained from the keyboard (interactive driver model).
+//
+// The front_side reference frame has Z up, X towards the front of the vehicle,
+// and Y pointing to the left.
+//
+// =============================================================================
+
+#include "chrono/core/ChRealtimeStep.h"
+
+#include "chrono_vehicle/ChVehicleModelData.h"
+#include "chrono_vehicle/terrain/RigidTerrain.h"
+#include "chrono_vehicle/terrain/GranularTerrain.h"
+#include "chrono_vehicle/terrain/RandomSurfaceTerrain.h"
+#include "chrono_vehicle/driver/ChIrrGuiDriver.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
+
+#include "subsystems/ACV_Vehicle.h"
+#include "subsystems/ACV_SimplePowertrain.h"
+#include "subsystems/ACV_RigidTire.h"
+
+#include "Skid_steer_Vehicle.h"
+#include "Skid_steer_driveline.h"
+#include "chrono_vehicle/wheeled_vehicle/driveline/ChSimpleDriveline.h"
+//#include "Skid_steer_driveline.h"
+
+using namespace chrono;
+using namespace chrono::vehicle;
+
+// =============================================================================
+
+// Initial front_side position
+ChVector<> initLoc(10, 0, 0.5);
+
+// Initial front_side orientation
+ChQuaternion<> initRot = Q_from_AngZ(CH_C_PI / 3);
+
+// Type of tire model (RIGID, RIGID_MESH, or FIALA)
+TireModelType tire_model = TireModelType::RIGID;
+
+// Rigid terrain dimensions
+double terrainHeight = 0;
+double terrainLength = 100.0;  // size in X direction
+double terrainWidth = 100.0;   // size in Y direction
+
+// Simulation step size
+double step_size = 3e-3;
+
+// Time interval between two render frames
+double render_step_size = 1.0 / 50;  // FPS = 50
+
+// Point on chassis tracked by the camera
+ChVector<> trackPoint(0.0, 0.0, 1.75);
+
+// =============================================================================
+
+int main(int argc, char* argv[]) {
+
+    getchar();
+    GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+    //chrono::SetChronoDataPath(CHRONO_DATA_DIR);
+    GetLog() << "Chrono data directory: " << CHRONO_DATA_DIR << "\n\n";
+    //SetChronoDataPath("c:\\Users\\sskulka\\Documents\\chrono\\data");
+
+    // Create the vehicle
+    //creating the skid steer vehicle class
+    Skid_steer_Vehicle veh(false, ChContactMethod::NSC);
+    veh.Initialize(ChCoordsys<>(initLoc, initRot));
+    GetLog() << "Skid_steer_vehicle initialized" << "\n\n";
+    //old code
+        //ACV_Vehicle vehicle(false, ChContactMethod::NSC);
+        //vehicle.Initialize(ChCoordsys<>(initLoc, initRot));
+    veh.SetChassisVisualizationType(VisualizationType::PRIMITIVES);
+    veh.SetChassisRearVisualizationType(VisualizationType::PRIMITIVES);
+    veh.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
+    veh.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
+    veh.SetWheelVisualizationType(VisualizationType::NONE);
+
+    //vehicle.GetSystem()->Set_G_acc(ChVector<>(0, 0, 0));
+    veh.GetSystem()->Set_G_acc(ChVector<>(0, 0, 0));
+
+    // Create the terrain
+    //RandomSurfaceTerrain terrain(veh.GetSystem());
+    // JSON files for terrain (rigid plane)
+    std::string rigidterrain_file("terrain/RigidPlane.json");
+    RigidTerrain terrain(veh.GetSystem(), vehicle::GetDataFile(rigidterrain_file));
+    //auto patch_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    //patch_mat->SetFriction(0.9f);
+    //patch_mat->SetRestitution(0.01f);
+    //auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, terrainHeight), ChVector<>(0, 0, 1), terrainLength, terrainWidth);
+    //patch->SetColor(ChColor(0.5f, 0.5f, 1));
+    //patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
+    //terrain.m_patches;
+    terrain.Initialize();
+
+    // Create and initialize the powertrain system
+    //auto powertrain = chrono_types::make_shared<ACV_SimplePowertrain>("Powertrain");
+    //auto powertrain = chrono_types::make_shared<SimpleMapPowertrain>("Powertrain");
+    //vehicle.InitializePowertrain(powertrain);
+    //veh.InitializePowertrain(powertrain);
+    auto powertr_l = chrono_types::make_shared<generic::Generic_SimpleMapPowertrain>("Powertrain");
+    auto powertr_r = chrono_types::make_shared<generic::Generic_SimpleMapPowertrain>("Powertrain");
+    veh.InitializePowertrain(powertr_l, powertr_r);
+
+    // Create and initialize the front and rear tires
+    auto tire_FL = chrono_types::make_shared<ACV_RigidTire>("FL");
+    auto tire_FR = chrono_types::make_shared<ACV_RigidTire>("FR");
+    auto tire_RL = chrono_types::make_shared<ACV_RigidTire>("RL");
+    auto tire_RR = chrono_types::make_shared<ACV_RigidTire>("RR");
+
+    //vehicle.InitializeTire(tire_FL, vehicle.GetAxle(0)->m_wheels[0], VisualizationType::PRIMITIVES);
+    veh.InitializeTire(tire_FL, veh.GetAxle(0)->m_wheels[0], VisualizationType::PRIMITIVES);
+    //vehicle.InitializeTire(tire_FR, vehicle.GetAxle(0)->m_wheels[1], VisualizationType::PRIMITIVES);
+    veh.InitializeTire(tire_FR, veh.GetAxle(0)->m_wheels[1], VisualizationType::PRIMITIVES);
+    //vehicle.InitializeTire(tire_RL, vehicle.GetAxle(1)->m_wheels[0], VisualizationType::PRIMITIVES);
+    veh.InitializeTire(tire_RL, veh.GetAxle(1)->m_wheels[0], VisualizationType::PRIMITIVES);
+    //vehicle.InitializeTire(tire_RR, vehicle.GetAxle(1)->m_wheels[1], VisualizationType::PRIMITIVES);
+    veh.InitializeTire(tire_RR, veh.GetAxle(1)->m_wheels[1], VisualizationType::PRIMITIVES);
+
+    // Create the Irrlicht visualization
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Articulated Vehicle Demo");
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    //vehicle.SetVisualSystem(vis);
+    veh.SetVisualSystem(vis);
+
+    // Initialize interactive driver
+    ChIrrGuiDriver driver(*vis);
+    driver.SetSteeringDelta(0.04);
+    driver.SetThrottleDelta(0.2);
+    driver.SetBrakingDelta(0.5);
+
+    driver.Initialize();
+
+    // ---------------
+    // Simulation loop
+    // ---------------
+
+    ChRealtimeStepTimer realtime_timer;
+    while (vis->Run()) {
+        //double time = vehicle.GetSystem()->GetChTime();
+        double time = veh.GetSystem()->GetChTime();
+
+        // Render scene
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
+
+        // Get driver inputs
+        DriverInputs driver_inputs = driver.GetInputs();
+
+        //for forward, both should move similarly
+        //for left, left wheels should have lesser torque than right wheels
+        //for right, right wheels should have lesser torque
+
+        if (driver_inputs.m_throttle == 0.0000 && driver_inputs.m_steering == 0.0000 && driver_inputs.m_braking == 0.0000) {
+            GetLog() << "no driver input being passed" << "\n\n";
+            driver_inputs.m_throttle = 0.2000;
+            driver_inputs.m_steering = 1.1;
+        }
+
+        // Update modules (process inputs from other modules)
+        driver.Synchronize(time);
+        terrain.Synchronize(time);
+        //vehicle.Synchronize(time, driver_inputs, terrain);
+        veh.Synchronize(time, driver_inputs, terrain);
+        vis->Synchronize(driver.GetInputModeAsString(), driver_inputs);
+
+        // Advance simulation for one timestep for all modules
+        driver.Advance(step_size);
+        terrain.Advance(step_size);
+        //vehicle.Advance(step_size);
+        veh.Advance(step_size);
+        vis->Advance(step_size);
+
+        // Spin in place for real time to catch up
+        realtime_timer.Spin(step_size);
+    }
+
+    return 0;
+}
